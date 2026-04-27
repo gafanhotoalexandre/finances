@@ -6,7 +6,8 @@ Project Finance e um app de fluxo de caixa pessoal com login simples, convites p
 
 - v0.1 validada: login, ativacao de convite e dashboard mensal protegido.
 - shell de auth refinada: linguagem mais humana, superficie mais limpa e foco em conclusao rapida do acesso.
-- v0.2 planejada: rota `/admin` para emissao e revogacao de convites.
+- v0.2 ativa: rota `/admin` com emissao e revogacao de convites.
+- v0.2.1 em foco: convites para membro do workspace atual e para novo workspace isolado.
 
 ## Stack
 
@@ -24,6 +25,7 @@ Project Finance e um app de fluxo de caixa pessoal com login simples, convites p
 - `/login`
 - `/invite/:code`
 - `/dashboard`
+- `/admin`
 
 ## Principios da arquitetura
 
@@ -51,9 +53,18 @@ Arquivos relacionados:
 
 1. Rode `npm install`.
 2. Crie o `.env` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` reais.
-3. Aplique a migracao `supabase/migrations/20260426130000_fase0_foundation.sql` no projeto Supabase.
+3. Aplique as migrations em `supabase/migrations/` no projeto Supabase, incluindo foundation, snapshots de historico e ajuste de RLS para convites isolados.
 4. Confirme que `Confirm email` esta desativado em `Authentication`.
 5. Rode `npm run dev`.
+
+## Validacao rapida da v0.2.1
+
+1. Entre em `/admin` com uma conta `admin`.
+2. Gere um convite em `Novo Workspace Isolado` informando um nome valido.
+3. Gere um convite em `Membro do meu espaco`.
+4. Confirme que ambos aparecem no historico com tipo e role coerentes.
+5. Revogue um convite isolado ainda `pending` e confirme que ele permanece no historico.
+6. Ative um convite isolado com conta nova e confirme a criacao do workspace com o nome informado.
 
 ## Validacao rapida da v0.1
 
@@ -90,6 +101,7 @@ Importante: essa migracao e destrutiva para os dados dessas tabelas. Use em ambi
 
 - rota `/admin`
 - criacao de convites com codigo no formato `FIN-AAAA-XXXX`
+- opcao entre membro do workspace atual e novo workspace isolado
 - revogacao com historico preservado
 - fluxo completo admin -> convite -> ativacao -> dashboard
 

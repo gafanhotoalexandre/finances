@@ -285,9 +285,9 @@ export function DashboardPage() {
                   </h2>
                   <Badge
                     variant="outline"
-                    className="border-slate-200/80 bg-white/78 text-[11px] tracking-[0.18em] uppercase text-slate-700 dark:border-slate-700/80 dark:bg-slate-950/62 dark:text-slate-200"
+                    className="glass-card border-white/65 bg-white/72 text-[11px] tracking-[0.18em] uppercase text-slate-700 dark:border-slate-700/70 dark:bg-slate-950/60 dark:text-slate-200"
                   >
-                    v0.1 real
+                    Overview
                   </Badge>
                 </div>
                 <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">

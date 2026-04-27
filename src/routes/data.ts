@@ -26,6 +26,8 @@ import type { AppRole } from "@/store/auth"
 
 type InviteStatus = "pending" | "used" | "expired" | "revoked"
 
+export type AdminInviteScope = "isolated-workspace" | "workspace-member"
+
 type AdminInviteRow = {
   claimed_at: string | null
   claimed_at_snapshot: string | null
@@ -38,17 +40,36 @@ type AdminInviteRow = {
   requested_role: AppRole
   revoked_at: string | null
   status: InviteStatus
+  workspace_id: string | null
+  workspace_name: string | null
 }
 
 type CreatedInviteRow = {
   code: string
   expires_at: string
   id: string
+  requested_role: AppRole
+  workspace_id: string | null
+  workspace_name: string | null
 }
 
 type ExistingInviteRow = {
   id: string
   status: InviteStatus
+}
+
+type CreateAdminInviteInput = {
+  scope: AdminInviteScope
+  workspaceName: string | null
+}
+
+export type AdminCreatedInvite = {
+  code: string
+  expiresAt: string
+  id: string
+  requestedRole: AppRole
+  scope: AdminInviteScope
+  workspaceName: string | null
 }
 
 export type RootLoaderData = {
@@ -92,8 +113,10 @@ export type AdminInviteRecord = {
   id: string
   requestedRole: AppRole
   revokedAt: string | null
+  scope: AdminInviteScope
   status: InviteStatus
   visualStatus: InviteStatus
+  workspaceName: string | null
 }
 
 export type AdminLoaderData = {
@@ -115,11 +138,7 @@ export type InviteActionData = {
 export type AdminActionIntent = "create-invite" | "revoke-invite"
 
 export type AdminActionData = {
-  createdInvite: {
-    code: string
-    expiresAt: string
-    id: string
-  } | null
+  createdInvite: AdminCreatedInvite | null
   error: string | null
   info: string | null
   intent: AdminActionIntent | null
@@ -129,13 +148,20 @@ export type AdminActionData = {
 const INVITE_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const INVITE_CODE_SEGMENT_LENGTH = 4
 const MAX_INVITE_CODE_ATTEMPTS = 6
+const MIN_WORKSPACE_NAME_LENGTH = 3
+const MAX_WORKSPACE_NAME_LENGTH = 80
 
 const adminFriendlyErrors: Record<string, string> = {
   INVALID_ADMIN_INTENT: "A acao administrativa enviada nao foi reconhecida.",
+  INVALID_INVITE_SCOPE: "Escolha o tipo de convite antes de continuar.",
   INVITE_CODE_GENERATION_FAILED:
     "Nao foi possivel reservar um codigo unico depois de varias tentativas. Tente novamente.",
   INVITE_ID_REQUIRED: "Escolha um convite valido antes de revogar.",
   INVITE_REVOKE_ONLY_PENDING: "Apenas convites pendentes podem ser revogados.",
+  WORKSPACE_NAME_LENGTH_INVALID:
+    "O nome do novo workspace deve ter entre 3 e 80 caracteres.",
+  WORKSPACE_NAME_REQUIRED:
+    "Informe um nome para o novo workspace isolado antes de gerar o convite.",
 }
 
 export async function rootLoader() {
@@ -248,7 +274,7 @@ export async function dashboardLoader({ request }: LoaderFunctionArgs) {
 
 export async function adminLoader() {
   const snapshot = await requireAdminAccess()
-  const invites = await getAdminInvites(snapshot.workspaceId)
+  const invites = await getAdminInvites()
 
   return {
     configured: true,
@@ -389,10 +415,10 @@ export async function adminAction({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "create-invite") {
-    return handleCreateInviteAction(snapshot)
+    return handleCreateInviteAction(snapshot, formData)
   }
 
-  return handleRevokeInviteAction(snapshot, formData)
+  return handleRevokeInviteAction(formData)
 }
 
 export async function signOutAction() {
@@ -410,13 +436,17 @@ export async function signOutAction() {
   throw redirect("/login")
 }
 
-async function handleCreateInviteAction(snapshot: WorkspaceAccessSnapshot) {
+async function handleCreateInviteAction(
+  snapshot: WorkspaceAccessSnapshot,
+  formData: FormData
+) {
   try {
-    const createdInvite = await createAdminInvite(snapshot)
+    const inviteInput = parseAdminInviteInput(formData)
+    const createdInvite = await createAdminInvite(snapshot, inviteInput)
 
     return createAdminActionResponse({
       createdInvite,
-      info: "Convite gerado. Copie o link completo e envie para a pessoa certa.",
+      info: getCreateInviteSuccessMessage(createdInvite),
       intent: "create-invite",
     })
   } catch (error) {
@@ -430,10 +460,7 @@ async function handleCreateInviteAction(snapshot: WorkspaceAccessSnapshot) {
   }
 }
 
-async function handleRevokeInviteAction(
-  snapshot: WorkspaceAccessSnapshot,
-  formData: FormData
-) {
+async function handleRevokeInviteAction(formData: FormData) {
   const inviteId = String(formData.get("inviteId") ?? "").trim()
 
   if (!inviteId) {
@@ -447,10 +474,10 @@ async function handleRevokeInviteAction(
   }
 
   try {
-    await revokeAdminInvite(snapshot.workspaceId, inviteId)
+    await revokeAdminInvite(inviteId)
 
     return createAdminActionResponse({
-      info: "Convite revogado e mantido no historico do workspace.",
+      info: "Convite revogado e mantido no historico administrativo.",
       intent: "revoke-invite",
       revokedInviteId: inviteId,
     })
@@ -466,13 +493,12 @@ async function handleRevokeInviteAction(
   }
 }
 
-async function getAdminInvites(workspaceId: string) {
+async function getAdminInvites() {
   const { data, error } = await supabase
     .from("invites")
     .select(
-      "id, code, requested_role, status, expires_at, created_at, revoked_at, claimed_at, claimed_by, claimed_at_snapshot, claimed_by_snapshot"
+      "id, code, requested_role, status, expires_at, created_at, revoked_at, claimed_at, claimed_by, claimed_at_snapshot, claimed_by_snapshot, workspace_id, workspace_name"
     )
-    .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false })
 
   if (error) {
@@ -482,28 +508,39 @@ async function getAdminInvites(workspaceId: string) {
   return ((data ?? []) as AdminInviteRow[]).map(mapAdminInvite)
 }
 
-async function createAdminInvite(snapshot: WorkspaceAccessSnapshot) {
+async function createAdminInvite(
+  snapshot: WorkspaceAccessSnapshot,
+  inviteInput: CreateAdminInviteInput
+) {
   for (let attempt = 0; attempt < MAX_INVITE_CODE_ATTEMPTS; attempt += 1) {
     const code = generateInviteCode()
+    const invitePayload =
+      inviteInput.scope === "isolated-workspace"
+        ? {
+            code,
+            created_by: snapshot.session.user.id,
+            requested_role: "admin" as const,
+            workspace_id: null,
+            workspace_name: inviteInput.workspaceName,
+          }
+        : {
+            code,
+            created_by: snapshot.session.user.id,
+            requested_role: "user" as const,
+            workspace_id: snapshot.workspaceId,
+            workspace_name: null,
+          }
+
     const { data, error } = await supabase
       .from("invites")
-      .insert({
-        code,
-        created_by: snapshot.session.user.id,
-        requested_role: "user",
-        workspace_id: snapshot.workspaceId,
-      })
-      .select("id, code, expires_at")
+      .insert(invitePayload)
+      .select("id, code, expires_at, requested_role, workspace_id, workspace_name")
       .single()
 
     if (!error) {
       const row = data as CreatedInviteRow
 
-      return {
-        code: row.code,
-        expiresAt: row.expires_at,
-        id: row.id,
-      }
+      return mapCreatedInvite(row)
     }
 
     if (getErrorCode(error) === "23505") {
@@ -516,11 +553,10 @@ async function createAdminInvite(snapshot: WorkspaceAccessSnapshot) {
   throw new Error("INVITE_CODE_GENERATION_FAILED")
 }
 
-async function revokeAdminInvite(workspaceId: string, inviteId: string) {
+async function revokeAdminInvite(inviteId: string) {
   const { data: existingInvite, error: readError } = await supabase
     .from("invites")
     .select("id, status")
-    .eq("workspace_id", workspaceId)
     .eq("id", inviteId)
     .maybeSingle()
 
@@ -544,7 +580,6 @@ async function revokeAdminInvite(workspaceId: string, inviteId: string) {
       revoked_at: new Date().toISOString(),
       status: "revoked",
     })
-    .eq("workspace_id", workspaceId)
     .eq("id", inviteId)
     .eq("status", "pending")
     .select("id")
@@ -586,8 +621,54 @@ function mapAdminInvite(row: AdminInviteRow): AdminInviteRecord {
     id: row.id,
     requestedRole: row.requested_role,
     revokedAt: row.revoked_at,
+    scope: getInviteScopeFromWorkspaceId(row.workspace_id),
     status: row.status,
     visualStatus: getVisualInviteStatus(row.status, row.expires_at),
+    workspaceName: row.workspace_name,
+  }
+}
+
+function mapCreatedInvite(row: CreatedInviteRow): AdminCreatedInvite {
+  return {
+    code: row.code,
+    expiresAt: row.expires_at,
+    id: row.id,
+    requestedRole: row.requested_role,
+    scope: getInviteScopeFromWorkspaceId(row.workspace_id),
+    workspaceName: row.workspace_name,
+  }
+}
+
+function parseAdminInviteInput(formData: FormData): CreateAdminInviteInput {
+  const scope = getAdminInviteScope(formData.get("inviteScope"))
+
+  if (!scope) {
+    throw new Error("INVALID_INVITE_SCOPE")
+  }
+
+  if (scope === "workspace-member") {
+    return {
+      scope,
+      workspaceName: null,
+    }
+  }
+
+  const workspaceName = String(formData.get("workspaceName") ?? "").trim()
+
+  if (!workspaceName) {
+    throw new Error("WORKSPACE_NAME_REQUIRED")
+  }
+
+  if (
+    workspaceName.length < MIN_WORKSPACE_NAME_LENGTH ||
+    workspaceName.length > MAX_WORKSPACE_NAME_LENGTH
+  ) {
+    throw new Error("WORKSPACE_NAME_LENGTH_INVALID")
+  }
+
+  return {
+    scope,
+    workspaceName,
   }
 }
 
@@ -611,6 +692,18 @@ function getAdminActionIntent(value: FormDataEntryValue | null) {
   }
 
   if (value === "create-invite" || value === "revoke-invite") {
+    return value
+  }
+
+  return null
+}
+
+function getAdminInviteScope(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") {
+    return null
+  }
+
+  if (value === "isolated-workspace" || value === "workspace-member") {
     return value
   }
 
@@ -665,6 +758,24 @@ function getVisualInviteStatus(status: InviteStatus, expiresAt: string) {
   }
 
   return status
+}
+
+function getInviteScopeFromWorkspaceId(
+  workspaceId: string | null
+): AdminInviteScope {
+  if (workspaceId === null) {
+    return "isolated-workspace"
+  }
+
+  return "workspace-member"
+}
+
+function getCreateInviteSuccessMessage(createdInvite: AdminCreatedInvite) {
+  if (createdInvite.scope === "isolated-workspace") {
+    return `Convite para o novo workspace isolado ${createdInvite.workspaceName ?? "sem nome"} gerado. Copie o link completo e envie para iniciar esse espaco.`
+  }
+
+  return "Convite de membro do seu workspace gerado. Copie o link completo e envie para a pessoa certa."
 }
 
 function toShortUserIdentifier(userId: string | null) {

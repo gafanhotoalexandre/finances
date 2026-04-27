@@ -17,7 +17,7 @@ export function NotFoundPage() {
         <CardHeader>
           <CardTitle>Rota nao encontrada</CardTitle>
           <CardDescription>
-            O frontend da v0.1 reconhece apenas login, convite e o primeiro dashboard protegido.
+            Este app reconhece login, convite, dashboard e a area administrativa protegida.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">

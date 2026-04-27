@@ -4,6 +4,7 @@ import { ShieldCheckIcon, TerminalSquareIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { APP_VERSION } from "@/lib/app-meta"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/store/auth"
 
@@ -29,7 +30,7 @@ export function AppLayout() {
                 Project Finance
               </h1>
               <Badge variant="outline" className="border-white/60 bg-white/55 text-[11px] tracking-[0.22em] uppercase dark:border-slate-700/70 dark:bg-slate-950/55">
-                v0.1
+                v{APP_VERSION}
               </Badge>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-300">

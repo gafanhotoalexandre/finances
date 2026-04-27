@@ -1,14 +1,15 @@
 import * as React from "react"
 import {
   ArrowLeftIcon,
+  Building2Icon,
   CheckCircle2Icon,
   CopyIcon,
   HistoryIcon,
   Link2Icon,
   LoaderCircleIcon,
-  ShieldCheckIcon,
   SparklesIcon,
   TimerResetIcon,
+  UsersIcon,
   XCircleIcon,
 } from "lucide-react"
 import {
@@ -40,11 +41,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import type {
   AdminActionData,
   AdminInviteRecord,
+  AdminInviteScope,
   AdminLoaderData,
 } from "@/routes/data"
 
@@ -69,6 +81,29 @@ type InviteMetricCardProps = {
   value: number
 }
 
+const MIN_WORKSPACE_NAME_LENGTH = 3
+const MAX_WORKSPACE_NAME_LENGTH = 80
+
+const INVITE_SCOPE_OPTIONS: Array<{
+  description: string
+  icon: React.ComponentType<React.ComponentProps<"svg">>
+  label: string
+  value: AdminInviteScope
+}> = [
+  {
+    description: "Cria um convite para abrir um workspace novo.",
+    icon: Building2Icon,
+    label: "Criar novo workspace",
+    value: "isolated-workspace",
+  },
+  {
+    description: "Cria um convite para o workspace que voce administra hoje.",
+    icon: UsersIcon,
+    label: "Adicionar ao meu workspace",
+    value: "workspace-member",
+  },
+]
+
 export function AdminPage() {
   const loaderData = useRouteLoaderData<AdminLoaderData>("admin")
   const actionData = useActionData() as AdminActionData | undefined
@@ -78,8 +113,12 @@ export function AdminPage() {
     null
   )
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
+  const [inviteScope, setInviteScope] = React.useState<AdminInviteScope>(
+    "isolated-workspace"
+  )
   const [inviteToRevoke, setInviteToRevoke] =
     React.useState<AdminInviteRecord | null>(null)
+  const [workspaceName, setWorkspaceName] = React.useState("")
 
   if (!loaderData) {
     throw new Error("ADMIN_LOADER_MISSING")
@@ -95,6 +134,19 @@ export function AdminPage() {
       : null
   const isCreating = pendingIntent === "create-invite"
   const isRevoking = pendingIntent === "revoke-invite"
+  const shouldShowWorkspaceName = inviteScope === "isolated-workspace"
+  const normalizedWorkspaceName = workspaceName.trim()
+  const workspaceNameLength = normalizedWorkspaceName.length
+  const isWorkspaceNameInvalid =
+    shouldShowWorkspaceName &&
+    workspaceName.length > 0 &&
+    (workspaceNameLength < MIN_WORKSPACE_NAME_LENGTH ||
+      workspaceNameLength > MAX_WORKSPACE_NAME_LENGTH)
+  const canCreateInvite =
+    !isCreating &&
+    (!shouldShowWorkspaceName ||
+      (workspaceNameLength >= MIN_WORKSPACE_NAME_LENGTH &&
+        workspaceNameLength <= MAX_WORKSPACE_NAME_LENGTH))
 
   const metrics = countInvitesByVisualStatus(loaderData.invites)
   const recentInvite = actionData?.createdInvite ?? null
@@ -143,6 +195,14 @@ export function AdminPage() {
     setInviteToRevoke(null)
   }
 
+  function handleInviteScopeChange(nextScope: AdminInviteScope) {
+    setInviteScope(nextScope)
+
+    if (nextScope === "workspace-member") {
+      setWorkspaceName("")
+    }
+  }
+
   return (
     <>
       <section className="w-full min-w-0 rounded-[28px] py-4">
@@ -155,19 +215,18 @@ export function AdminPage() {
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h2 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl dark:text-slate-50">
-                    Convites do workspace
+                    Convites administrativos
                   </h2>
                   <Badge
                     variant="outline"
-                    className="border-indigo-200/80 bg-indigo-50/78 text-[11px] tracking-[0.18em] uppercase text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/12 dark:text-indigo-200"
+                    className="glass-card border-white/65 bg-white/72 text-[11px] tracking-[0.18em] uppercase text-slate-700 dark:border-slate-700/70 dark:bg-slate-950/60 dark:text-slate-200"
                   >
-                    v0.2 admin
+                    Admin
                   </Badge>
                 </div>
                 <p className="max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Gere links no formato FIN-AAAA-XXXX, copie a URL completa no
-                  dominio atual e acompanhe o historico real sem perder leitura
-                  quando um convite expira ou e revogado.
+                  Crie convites para um novo workspace ou para o seu workspace
+                  atual e acompanhe o historico em um unico lugar.
                 </p>
               </div>
             </div>
@@ -228,40 +287,119 @@ export function AdminPage() {
                     variant="outline"
                     className="w-fit border-white/65 bg-white/70 text-[11px] tracking-[0.18em] uppercase dark:border-slate-700/80 dark:bg-slate-950/60"
                   >
-                    Emissao
+                    Novo convite
                   </Badge>
-                  <CardTitle className="pt-2">Gerar novo convite</CardTitle>
+                  <CardTitle className="pt-2">Criar convite</CardTitle>
                   <CardDescription>
-                    Nesta fase, todos os convites criados aqui saem com role
-                    fixa de user, prazo padrao do banco e codigo protegido por
-                    retry automatico em caso de colisao 23505.
+                    Escolha o destino do convite e gere um link pronto para
+                    copiar.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4 px-5 pb-5">
-                  <div className="grid gap-3">
-                    <div className="rounded-2xl border border-white/60 bg-white/72 px-4 py-3 text-sm text-slate-600 dark:border-slate-700/70 dark:bg-slate-950/52 dark:text-slate-300">
-                      <div className="flex items-center gap-2 text-slate-700 dark:text-slate-100">
-                        <ShieldCheckIcon className="size-4" />
-                        <span className="font-medium">Link pronto para copia</span>
-                      </div>
-                      <p className="pt-1 leading-6">
-                        O botao de copia sempre monta a URL com
-                        window.location.origin no navegador atual.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-dashed border-slate-300/80 bg-slate-50/74 px-4 py-3 text-sm text-slate-600 dark:border-slate-700/70 dark:bg-slate-900/44 dark:text-slate-300">
-                      Convites visualmente expirados continuam listados como
-                      historico. Se ainda estiverem pending no banco, a revogacao
-                      continua disponivel para fechar o registro.
-                    </div>
-                  </div>
-
-                  <Form method="post" className="flex flex-col gap-3">
+                  <Form method="post" className="flex flex-col gap-4">
                     <input type="hidden" name="intent" value="create-invite" />
+                    <FieldGroup>
+                      <FieldSet className="gap-4">
+                        <div className="flex flex-col gap-1">
+                          <FieldLegend>Como esse convite sera usado</FieldLegend>
+                          <FieldDescription>
+                            Escolha como esse convite sera usado. O link sera
+                            criado no dominio atual.
+                          </FieldDescription>
+                        </div>
+                        <div
+                          aria-label="Tipo de convite"
+                          data-slot="radio-group"
+                          role="radiogroup"
+                          className="grid gap-2.5"
+                        >
+                          {INVITE_SCOPE_OPTIONS.map((option) => {
+                            const isSelected = inviteScope === option.value
+                            const Icon = option.icon
+
+                            return (
+                              <label
+                                key={option.value}
+                                className={cn(
+                                  "flex min-w-0 cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3.5 transition-[background-color,border-color,box-shadow,color]",
+                                  isSelected
+                                    ? "border-slate-900 bg-slate-950/96 text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.72)] dark:border-sky-300/60 dark:bg-slate-900 dark:text-slate-50"
+                                    : "border-white/65 bg-white/80 text-slate-700 hover:border-slate-300 hover:bg-white dark:border-slate-700/75 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-950/65"
+                                )}
+                              >
+                                <input
+                                  checked={isSelected}
+                                  className="mt-1 size-4 shrink-0 accent-slate-900 dark:accent-sky-300"
+                                  name="inviteScope"
+                                  onChange={() =>
+                                    handleInviteScopeChange(option.value)
+                                  }
+                                  type="radio"
+                                  value={option.value}
+                                />
+                                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <Icon
+                                      className={cn(
+                                        "size-4 shrink-0",
+                                        isSelected
+                                          ? "text-sky-200"
+                                          : "text-slate-500 dark:text-slate-300"
+                                      )}
+                                    />
+                                    <span className="min-w-0 text-sm font-semibold tracking-tight">
+                                      {option.label}
+                                    </span>
+                                  </div>
+                                  <p
+                                    className={cn(
+                                      "min-w-0 text-sm leading-6",
+                                      isSelected
+                                        ? "text-white/82"
+                                        : "text-slate-600 dark:text-slate-300"
+                                    )}
+                                  >
+                                    {option.description}
+                                  </p>
+                                </div>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </FieldSet>
+
+                      {shouldShowWorkspaceName ? (
+                        <Field data-invalid={isWorkspaceNameInvalid || undefined}>
+                          <FieldLabel htmlFor="workspaceName">Nome do workspace</FieldLabel>
+                          <Input
+                            aria-invalid={isWorkspaceNameInvalid || undefined}
+                            id="workspaceName"
+                            maxLength={MAX_WORKSPACE_NAME_LENGTH}
+                            minLength={MIN_WORKSPACE_NAME_LENGTH}
+                            name="workspaceName"
+                            onChange={(event) =>
+                              setWorkspaceName(event.target.value)
+                            }
+                            placeholder="Ex: Studio Fiscal Norte"
+                            required
+                            value={workspaceName}
+                          />
+                          <FieldDescription>
+                            Esse nome sera usado na criacao do novo workspace.
+                          </FieldDescription>
+                          {isWorkspaceNameInvalid ? (
+                            <FieldError>
+                              Use entre {MIN_WORKSPACE_NAME_LENGTH} e {MAX_WORKSPACE_NAME_LENGTH} caracteres para nomear o novo workspace.
+                            </FieldError>
+                          ) : null}
+                        </Field>
+                      ) : null}
+                    </FieldGroup>
+
                     <Button
                       type="submit"
                       className="dashboard-cta w-full"
-                      disabled={isCreating}
+                      disabled={!canCreateInvite}
                     >
                       {isCreating ? (
                         <LoaderCircleIcon
@@ -271,34 +409,48 @@ export function AdminPage() {
                       ) : (
                         <SparklesIcon data-icon="inline-start" />
                       )}
-                      {isCreating ? "Gerando convite..." : "Gerar convite user"}
+                      {isCreating
+                        ? "Gerando convite..."
+                        : inviteScope === "isolated-workspace"
+                          ? "Criar convite para novo workspace"
+                          : "Criar convite para meu workspace"}
                     </Button>
                   </Form>
 
                   {recentInvite ? (
                     <>
                       <Separator />
-                      <div className="rounded-[22px] border border-indigo-200/70 bg-indigo-50/78 p-4 text-sm shadow-[0_18px_34px_-28px_rgba(67,56,202,0.4)] dark:border-indigo-500/25 dark:bg-indigo-500/10">
+                      <div className="rounded-[20px] border border-indigo-200/70 bg-indigo-50/78 px-4 py-4 text-sm shadow-[0_18px_34px_-28px_rgba(67,56,202,0.4)] dark:border-indigo-500/25 dark:bg-indigo-500/10">
                         <div className="flex flex-col gap-3">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Badge className="bg-indigo-600 text-white dark:bg-indigo-500 dark:text-slate-950">
-                                Novo convite
-                              </Badge>
-                              <span className="font-mono text-xs tracking-[0.18em] text-indigo-700 uppercase dark:text-indigo-200">
-                                {recentInvite.code}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 flex-col gap-1">
+                              <span className="text-[11px] font-medium tracking-[0.16em] uppercase text-indigo-700 dark:text-indigo-200">
+                                Ultimo convite
                               </span>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge className="bg-indigo-600 font-mono text-white dark:bg-indigo-500 dark:text-slate-950">
+                                  {recentInvite.code}
+                                </Badge>
+                                <Badge
+                                  variant="outline"
+                                  className={getInviteScopeBadgeClassName(
+                                    recentInvite.scope
+                                  )}
+                                >
+                                  {getInviteScopeLabel(recentInvite.scope)}
+                                </Badge>
+                              </div>
                             </div>
-                            <span className="text-xs text-indigo-700 dark:text-indigo-200">
+                            <span className="text-right text-xs text-indigo-700 dark:text-indigo-200">
                               Expira em {formatDate(recentInvite.expiresAt)}
                             </span>
                           </div>
-                          <p className="truncate font-mono text-xs text-indigo-700 dark:text-indigo-200">
-                            {buildInviteUrl(recentInvite.code)}
+                          <p className="text-sm leading-6 text-indigo-700 dark:text-indigo-200">
+                            {describeInviteAudience(recentInvite)}
                           </p>
                           <Button
                             type="button"
-                            variant="outline"
+                            className="dashboard-cta w-full sm:w-auto"
                             onClick={() =>
                               void handleCopyInviteLink(
                                 recentInvite.code,
@@ -309,7 +461,7 @@ export function AdminPage() {
                             <CopyIcon data-icon="inline-start" />
                             {copiedKey === recentInvite.id
                               ? "Copiado"
-                              : "Copiar link completo"}
+                              : "Copiar link"}
                           </Button>
                         </div>
                       </div>
@@ -326,8 +478,8 @@ export function AdminPage() {
                     Historico de convites
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {loaderData.invites.length} registro(s) lido(s) no workspace
-                    atual.
+                    {loaderData.invites.length} registro(s) visivel(is) para
+                    este admin.
                   </p>
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -340,8 +492,8 @@ export function AdminPage() {
                   <CardHeader className="px-5 pt-5">
                     <CardTitle>Nenhum convite emitido ainda.</CardTitle>
                     <CardDescription>
-                      Gere o primeiro link neste workspace para inaugurar o fluxo
-                      admin - convite - ativacao - dashboard.
+                      Gere o primeiro link para um novo workspace ou para o seu
+                      workspace atual.
                     </CardDescription>
                   </CardHeader>
                 </Card>
@@ -376,6 +528,14 @@ export function AdminPage() {
                               >
                                 {invite.code}
                               </Badge>
+                              <Badge
+                                variant="outline"
+                                className={getInviteScopeBadgeClassName(
+                                  invite.scope
+                                )}
+                              >
+                                {getInviteScopeLabel(invite.scope)}
+                              </Badge>
                               <Badge variant="secondary">Role {invite.requestedRole}</Badge>
                             </div>
 
@@ -384,6 +544,10 @@ export function AdminPage() {
                               <Separator orientation="vertical" className="h-3" />
                               <span>Expira em {formatDateTime(invite.expiresAt)}</span>
                             </div>
+
+                            <p className="text-xs leading-6 text-slate-500 dark:text-slate-400">
+                              {describeInviteAudience(invite)}
+                            </p>
 
                             <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
                               {describeInviteState(invite)}
@@ -459,7 +623,7 @@ export function AdminPage() {
             <AlertDialogTitle>Revogar este convite?</AlertDialogTitle>
             <AlertDialogDescription>
               {inviteToRevoke
-                ? `O codigo ${inviteToRevoke.code} sera marcado como revoked e permanecera no historico do workspace. Essa acao encerra o uso operacional do link e nao faz hard delete.`
+                ? `O codigo ${inviteToRevoke.code} sera marcado como revoked e permanecera no historico administrativo. ${describeInviteAudience(inviteToRevoke)} Essa acao encerra o uso operacional do link e nao faz hard delete.`
                 : "Confirme a revogacao deste convite."}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -527,6 +691,17 @@ function buildInviteUrl(code: string) {
   return new URL(invitePath, window.location.origin).toString()
 }
 
+function describeInviteAudience(invite: {
+  scope: AdminInviteScope
+  workspaceName: string | null
+}) {
+  if (invite.scope === "isolated-workspace") {
+    return `Cria um novo workspace e libera acesso admin para quem ativar o convite.`
+  }
+
+  return "Adiciona a pessoa ao seu workspace atual com acesso de membro."
+}
+
 function countInvitesByVisualStatus(invites: AdminInviteRecord[]) {
   return invites.reduce(
     (counts, invite) => {
@@ -576,6 +751,22 @@ function formatDateTime(value: string | null) {
   }
 
   return DATE_TIME_FORMATTER.format(new Date(value))
+}
+
+function getInviteScopeBadgeClassName(scope: AdminInviteScope) {
+  if (scope === "isolated-workspace") {
+    return "border-sky-200/80 bg-sky-50/78 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/12 dark:text-sky-200"
+  }
+
+  return "border-slate-200/80 bg-slate-50/78 text-slate-700 dark:border-slate-700/70 dark:bg-slate-900/55 dark:text-slate-200"
+}
+
+function getInviteScopeLabel(scope: AdminInviteScope) {
+  if (scope === "isolated-workspace") {
+    return "Novo workspace"
+  }
+
+  return "Workspace atual"
 }
 
 function getInviteBadgeClassName(status: AdminInviteRecord["visualStatus"]) {
