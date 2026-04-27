@@ -1,20 +1,52 @@
-import { Button } from "@/components/ui/button"
+import * as React from "react"
+import { Outlet, ScrollRestoration } from "react-router"
+
+import { syncAuthStoreFromBrowserSession } from "@/lib/auth"
+import { hasSupabaseEnv, supabase } from "@/lib/supabase"
+import { useAuthStore } from "@/store/auth"
 
 export function App() {
+  React.useEffect(() => {
+    if (!hasSupabaseEnv) {
+      useAuthStore.getState().clearAuth()
+      return undefined
+    }
+
+    void syncAuthStoreFromBrowserSession()
+
+    let syncTimer: number | null = null
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      useAuthStore.getState().setSession(session)
+
+      if (syncTimer !== null) {
+        window.clearTimeout(syncTimer)
+        syncTimer = null
+      }
+
+      if (session === null) {
+        useAuthStore.getState().clearAuth()
+        return
+      }
+
+      syncTimer = window.setTimeout(() => {
+        void syncAuthStoreFromBrowserSession()
+      }, 0)
+    })
+
+    return () => {
+      if (syncTimer !== null) {
+        window.clearTimeout(syncTimer)
+      }
+
+      data.subscription.unsubscribe()
+    }
+  }, [])
+
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
-    </div>
+    <>
+      <Outlet />
+      <ScrollRestoration />
+    </>
   )
 }
 

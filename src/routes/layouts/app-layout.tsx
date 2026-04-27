@@ -1,0 +1,64 @@
+import { Form, Outlet } from "react-router"
+import { ShieldCheckIcon, TerminalSquareIcon } from "lucide-react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { useAuthStore } from "@/store/auth"
+
+export function AppLayout() {
+  const session = useAuthStore((state) => state.session)
+  const role = useAuthStore((state) => state.role)
+  const workspaceId = useAuthStore((state) => state.workspaceId)
+
+  return (
+    <div className="bg-blueprint relative min-h-svh overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.07),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.08),transparent_28%)]" />
+      <header className="relative z-10 px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6">
+        <div className="glass-card mx-auto flex w-full max-w-6xl flex-col gap-4 rounded-[28px] border-white/55 px-5 py-5 dark:border-slate-700/70 dark:bg-slate-950/55 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-300">
+              <TerminalSquareIcon className="size-4" />
+              <span className="font-mono text-[10px] font-medium tracking-[0.24em] uppercase">
+                SYS::FINANCE
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">
+                Project Finance
+              </h1>
+              <Badge variant="outline" className="border-white/60 bg-white/55 text-[11px] tracking-[0.22em] uppercase dark:border-slate-700/70 dark:bg-slate-950/55">
+                v0.1
+              </Badge>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <span>{session?.user.email ?? "Sessao sem e-mail"}</span>
+              <Separator orientation="vertical" className="h-4" />
+              <span className="font-mono uppercase">{role ?? "sem role"}</span>
+              <Separator orientation="vertical" className="h-4" />
+              <span className="font-mono text-xs">{workspaceId ?? "sem workspace"}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 self-start lg:self-center">
+            <div className="hidden items-center gap-2 rounded-2xl border border-white/60 bg-white/50 px-3 py-2 text-xs text-slate-600 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-300 sm:flex">
+              <ShieldCheckIcon className="size-4 text-emerald-600 dark:text-emerald-300" />
+              RLS e contexto ativos
+            </div>
+            <Form method="post" action="/dashboard/sign-out">
+              <Button variant="outline" type="submit">
+                Sair
+              </Button>
+            </Form>
+          </div>
+        </div>
+      </header>
+
+      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <Outlet />
+      </main>
+    </div>
+  )
+}
+
+export default AppLayout

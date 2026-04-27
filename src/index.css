@@ -2,12 +2,14 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
+@import "@fontsource/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Inter Variable', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,6 +48,123 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@utility bg-blueprint {
+  background-color: rgba(248, 250, 252, 0.86);
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+  background-position: center center;
+  background-size: 30px 30px;
+}
+
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 18px 42px -28px rgba(15, 23, 42, 0.24);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@layer components {
+  .dashboard-cta {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.96));
+    border: 1px solid rgba(30, 41, 59, 0.96);
+    color: white;
+    box-shadow: 0 18px 34px -24px rgba(15, 23, 42, 0.9);
+  }
+
+  .dashboard-cta:hover {
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.99), rgba(51, 65, 85, 0.98));
+  }
+
+  .dashboard-cta:focus-visible {
+    border-color: rgba(99, 102, 241, 0.72);
+    box-shadow:
+      0 0 0 3px rgba(99, 102, 241, 0.18),
+      0 18px 34px -24px rgba(15, 23, 42, 0.9);
+  }
+
+  .dashboard-cta svg[data-icon],
+  .dashboard-fab svg[data-icon] {
+    color: rgba(129, 140, 248, 0.96);
+  }
+
+  .dashboard-fab {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.96));
+    border: 1px solid rgba(30, 41, 59, 0.96);
+    color: white;
+    box-shadow: 0 22px 42px -24px rgba(15, 23, 42, 0.92);
+  }
+
+  .dashboard-fab:hover {
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.99), rgba(51, 65, 85, 0.98));
+  }
+
+  .dashboard-fab:focus-visible {
+    border-color: rgba(99, 102, 241, 0.72);
+    box-shadow:
+      0 0 0 3px rgba(99, 102, 241, 0.18),
+      0 22px 42px -24px rgba(15, 23, 42, 0.92);
+  }
+}
+
+@utility animate-float-slow {
+  animation: float 8s ease-in-out infinite;
+}
+
+@utility animate-float-delayed {
+  animation: float 10s ease-in-out 2s infinite;
+}
+
+@utility animate-float-reverse {
+  animation: float-reverse 12s ease-in-out infinite;
+}
+
+@utility animate-enter {
+  opacity: 0;
+  animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(2deg);
+  }
+
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes float-reverse {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(15px) rotate(-2deg);
+  }
+
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 :root {
@@ -117,6 +236,19 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+  .dark .bg-blueprint {
+    background-color: rgba(15, 23, 42, 0.8);
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  }
+
+  .dark .glass-card {
+    background: rgba(15, 23, 42, 0.66);
+    border-color: rgba(148, 163, 184, 0.16);
+    box-shadow: 0 18px 48px -28px rgba(2, 6, 23, 0.62);
+  }
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -129,5 +261,16 @@
     }
   html {
     @apply font-sans;
+    }
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+    }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-border) 72%, transparent);
+    border-radius: 999px;
     }
 }
