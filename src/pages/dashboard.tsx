@@ -271,7 +271,7 @@ export function DashboardPage() {
 
   return (
     <>
-      <section className="w-full min-w-0 rounded-[28px] py-4 dark:bg-slate-950/78">
+      <section className="w-full min-w-0 rounded-[28px] py-4">
         <div className="flex flex-col gap-5 lg:gap-6">
           <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-2">

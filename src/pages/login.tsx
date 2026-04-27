@@ -34,13 +34,18 @@ export function LoginPage() {
     <Card className="glass-card rounded-[28px] border-white/55 bg-white/84 py-0 shadow-[0_24px_64px_-32px_rgba(15,23,42,0.45)] dark:border-slate-700/70 dark:bg-slate-950/60">
       <CardHeader className="px-6 pt-6">
         <CardAction>
-          <Badge variant="outline" className="border-white/60 bg-white/60 dark:border-slate-700/70 dark:bg-slate-950/55">
+          <Badge
+            variant="outline"
+            className="border-slate-200/90 bg-slate-50/85 text-slate-700 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-200"
+          >
             Login
           </Badge>
         </CardAction>
-        <CardTitle className="text-xl text-slate-800 dark:text-slate-100">Entrar no workspace</CardTitle>
+        <CardTitle className="text-xl text-slate-800 dark:text-slate-100">
+          Entrar
+        </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-300">
-          Use suas credenciais do Supabase Auth para restaurar a sessao e buscar o contexto do workspace.
+          Use seu e-mail e sua senha para voltar ao seu espaco com rapidez.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6 px-6 pb-6">
@@ -52,9 +57,10 @@ export function LoginPage() {
 
         <Form method="post" className="flex flex-col gap-6">
           <FieldSet>
-            <FieldLegend>Credenciais</FieldLegend>
+            <FieldLegend>Seus dados</FieldLegend>
             <FieldDescription>
-              Se a conta ainda nao pertence a um workspace, o login continua valido e o proximo passo passa a ser ativar um convite.
+              Se sua conta ainda nao estiver ligada a um espaco, tudo bem.
+              Depois do login, basta abrir um convite para concluir a entrada.
             </FieldDescription>
             <FieldGroup>
               <Field>
@@ -85,15 +91,20 @@ export function LoginPage() {
 
           {actionData?.error ? <FieldError>{actionData.error}</FieldError> : null}
 
-          <Button type="submit" disabled={!loaderData.configured || isSubmitting}>
+          <Button
+            type="submit"
+            className="auth-cta auth-login-cta w-full"
+            disabled={!loaderData.configured || isSubmitting}
+          >
             {isSubmitting ? "Entrando..." : "Entrar"}
           </Button>
         </Form>
 
         <div className="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
-          <span>Ja tem um convite e ainda nao pertence a um workspace?</span>
+          <span>Ja recebeu um convite?</span>
           <span>
-            Abra a URL de convite enviada pelo admin. Se precisar revisar a base de setup, volte para o <Link className="underline underline-offset-4 hover:text-foreground" to="/">roteamento inicial</Link>.
+            Abra o link enviado pela pessoa que administra seu espaco. Se
+            quiser recomecar do inicio, volte para a <Link className="underline underline-offset-4 hover:text-foreground" to="/">pagina inicial</Link>.
           </span>
         </div>
       </CardContent>

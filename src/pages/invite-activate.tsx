@@ -34,40 +34,51 @@ export function InviteActivatePage() {
     <Card className="glass-card rounded-[28px] border-white/55 bg-white/84 py-0 shadow-[0_24px_64px_-32px_rgba(15,23,42,0.45)] dark:border-slate-700/70 dark:bg-slate-950/60">
       <CardHeader className="px-6 pt-6">
         <CardAction>
-          <Badge variant="outline" className="border-white/60 bg-white/60 dark:border-slate-700/70 dark:bg-slate-950/55">
+          <Badge
+            variant="outline"
+            className="border-indigo-200/90 bg-indigo-50/85 text-indigo-700 dark:border-indigo-400/30 dark:bg-indigo-500/10 dark:text-indigo-200"
+          >
             Convite
           </Badge>
         </CardAction>
-        <CardTitle className="text-xl text-slate-800 dark:text-slate-100">Ativar convite</CardTitle>
+        <CardTitle className="text-xl text-slate-800 dark:text-slate-100">
+          Entrar com convite
+        </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-300">
-          O codigo abaixo chama a RPC <span className="font-mono">claim_invite</span> depois que a sessao fica pronta.
+          Use este codigo para criar sua conta ou liberar o acesso ao seu
+          espaco no mesmo fluxo.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6 px-6 pb-6">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-          <Badge variant="secondary" className="font-mono tracking-[0.16em] uppercase">
+          <Badge
+            variant="secondary"
+            className="bg-indigo-100 text-indigo-700 font-mono tracking-[0.16em] uppercase dark:bg-indigo-500/15 dark:text-indigo-200"
+          >
             {loaderData.code}
           </Badge>
           <span>
             {isSignedIn
-              ? `Sessao detectada para ${loaderData.sessionEmail}.`
-              : "Crie a conta agora para consumir o convite no mesmo fluxo."}
+              ? `Voce entrou como ${loaderData.sessionEmail}. Agora falta apenas confirmar.`
+              : "Crie sua conta agora para terminar a entrada sem sair desta tela."}
           </span>
         </div>
 
         <Form method="post" className="flex flex-col gap-6">
           {isSignedIn ? (
             <FieldSet>
-              <FieldLegend>Confirmar ativacao</FieldLegend>
+              <FieldLegend>Confirmar entrada</FieldLegend>
               <FieldDescription>
-                Sua sessao ja esta autenticada. O botao abaixo consome o convite e hidrata o workspace imediatamente.
+                Ao continuar, este convite conecta sua conta ao espaco certo e
+                libera o acesso.
               </FieldDescription>
             </FieldSet>
           ) : (
             <FieldSet>
-              <FieldLegend>Criar conta e ativar</FieldLegend>
+              <FieldLegend>Criar conta</FieldLegend>
               <FieldDescription>
-                O cadastro cria a sessao imediatamente porque o Confirm email ja esta desligado no projeto Supabase do MVP.
+                Preencha seus dados para criar o acesso e entrar logo em
+                seguida.
               </FieldDescription>
               <FieldGroup>
                 <Field>
@@ -105,18 +116,22 @@ export function InviteActivatePage() {
             </p>
           ) : null}
 
-          <Button type="submit" disabled={!loaderData.configured || isSubmitting}>
+          <Button
+            type="submit"
+            className="auth-cta auth-invite-cta w-full"
+            disabled={!loaderData.configured || isSubmitting}
+          >
             {isSubmitting
               ? "Ativando..."
               : isSignedIn
-                ? "Consumir convite"
-                : "Criar conta e ativar convite"}
+                ? "Confirmar e entrar"
+                : "Criar conta e entrar"}
           </Button>
         </Form>
 
         {!isSignedIn ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Ja possui conta? Entre em <Link className="underline underline-offset-4 hover:text-foreground" to="/login">/login</Link> e depois reabra esta mesma rota de convite.
+            Ja possui conta? Entre pela <Link className="underline underline-offset-4 hover:text-foreground" to="/login">tela de login</Link> e depois volte a este mesmo convite.
           </p>
         ) : null}
       </CardContent>

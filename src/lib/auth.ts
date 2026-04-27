@@ -20,7 +20,7 @@ type ClaimInviteRow = {
 }
 
 export const SUPABASE_CONFIGURATION_MESSAGE =
-  "Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para ativar login, convite e hidratacao do dashboard."
+  "As chaves do Supabase ainda nao foram configuradas. Preencha VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para liberar login e convite."
 
 const friendlyErrors: Record<string, string> = {
   AUTHENTICATION_REQUIRED: "Voce precisa estar autenticado para continuar.",
@@ -75,7 +75,7 @@ export function getFriendlyErrorMessage(
   }
 
   if (normalizedMessage.includes("email not confirmed")) {
-    return "A confirmacao de e-mail precisa estar desativada para este fluxo do MVP."
+    return "Para este fluxo funcionar de ponta a ponta, a confirmacao de e-mail precisa estar desativada no projeto Supabase."
   }
 
   return fallback

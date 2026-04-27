@@ -111,7 +111,7 @@ export async function loginLoader({ request }: LoaderFunctionArgs) {
     hasWorkspaceContext: Boolean(snapshot.workspaceId),
     info:
       redirectedForInvite || (snapshot.session && !snapshot.workspaceId)
-        ? "Sua sessao esta ativa, mas a conta ainda nao pertence a um workspace. Abra um convite para continuar."
+        ? "Voce ja entrou, mas sua conta ainda nao foi ligada a um espaco. Abra seu convite para continuar."
         : null,
   } satisfies LoginLoaderData
 }
@@ -216,7 +216,7 @@ export async function loginAction({ request }: ActionFunctionArgs) {
   return {
     error: null,
     info:
-      "Login realizado. Sua conta ainda nao esta vinculada a um workspace, entao o proximo passo e abrir um convite.",
+      "Entrada concluida. Agora falta apenas abrir seu convite para liberar o acesso ao espaco.",
   } satisfies LoginActionData
 }
 
@@ -245,7 +245,7 @@ export async function inviteAction({ params, request }: ActionFunctionArgs) {
 
     if (!email || !password) {
       return {
-        error: "Crie a conta com e-mail e senha para ativar o convite.",
+        error: "Preencha e-mail e senha para criar sua conta e ativar o convite.",
         info: null,
       } satisfies InviteActionData
     }
@@ -265,7 +265,7 @@ export async function inviteAction({ params, request }: ActionFunctionArgs) {
     if (!data.session) {
       return {
         error:
-          "A sessao nao ficou disponivel apos o cadastro. Verifique se o Confirm email continua desligado no Supabase.",
+          "A conta foi criada, mas a entrada nao ficou pronta logo em seguida. Confira se a confirmacao de e-mail esta desativada no Supabase para este fluxo.",
         info: null,
       } satisfies InviteActionData
     }
@@ -281,7 +281,7 @@ export async function inviteAction({ params, request }: ActionFunctionArgs) {
 
     return {
       error: null,
-      info: "O convite foi consumido, mas a conta ainda nao conseguiu hidratar o contexto do workspace.",
+      info: "O convite foi ativado, mas seu acesso ainda nao ficou pronto. Tente entrar novamente em instantes.",
     } satisfies InviteActionData
   } catch (error) {
     return {

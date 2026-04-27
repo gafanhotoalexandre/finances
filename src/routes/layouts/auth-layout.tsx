@@ -1,39 +1,38 @@
 import { Outlet, useLocation } from "react-router"
-import { KeyRoundIcon, ShieldCheckIcon, TerminalSquareIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 
-const copyByPath: Record<string, { eyebrow: string; title: string }> = {
+const copyByPath: Record<
+  string,
+  {
+    eyebrow: string
+    supporting: string
+    title: string
+  }
+> = {
   "/login": {
-    eyebrow: "Acesso protegido",
-    title: "Login e contexto minimo para destravar o MVP.",
+    eyebrow: "Acesso ao seu espaco",
+    supporting:
+      "Entre com calma e retome sua rotina financeira do ponto em que parou.",
+    title: "Um acesso simples, limpo e pronto para levar voce de volta ao caixa.",
   },
 }
 
 export function AuthLayout() {
   const location = useLocation()
   const copy = copyByPath[location.pathname] ?? {
-    eyebrow: "Convite guiado",
-    title: "Ative sua conta e vincule o primeiro workspace sem sair do fluxo.",
+    eyebrow: "Convite em andamento",
+    supporting:
+      "Crie sua conta, confirme os dados e entre no espaco certo sem sair desta tela.",
+    title: "Seu convite ja aponta o caminho. Falta apenas concluir a entrada.",
   }
 
   return (
     <div className="bg-blueprint relative min-h-svh overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,--theme(--color-primary/0.08),transparent_32%),radial-gradient(circle_at_bottom_right,--theme(--color-muted/0.08),transparent_38%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.05] text-slate-900 dark:text-slate-50">
-        <ShieldCheckIcon className="animate-float-slow absolute top-1/4 left-[10%] size-32 -rotate-12 sm:size-44 lg:size-56" />
-        <KeyRoundIcon className="animate-float-delayed absolute right-[8%] bottom-[18%] size-36 rotate-12 sm:size-52 lg:size-72" />
-      </div>
-      <div className="relative mx-auto flex min-h-svh max-w-6xl flex-col gap-10 px-6 py-8 lg:flex-row lg:items-center lg:justify-between lg:py-12">
-        <section className="flex max-w-xl flex-col gap-6">
-          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-300">
-            <TerminalSquareIcon className="size-4" />
-            <span className="font-mono text-[10px] font-medium tracking-[0.24em] uppercase">
-              SYS::AUTH
-            </span>
-          </div>
-          <Badge variant="outline" className="glass-card w-fit border-white/60 bg-white/55 text-[11px] uppercase tracking-[0.22em] text-slate-700 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-200">
+      <div className="relative mx-auto flex min-h-svh max-w-6xl flex-col gap-8 px-6 py-8 lg:flex-row lg:items-center lg:justify-between lg:gap-14 lg:py-12">
+        <section className="flex max-w-xl flex-col gap-6 lg:pr-4">
+          <Badge variant="outline" className="glass-card w-fit border-white/60 bg-white/60 text-[11px] uppercase tracking-[0.22em] text-slate-700 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-200">
             {copy.eyebrow}
           </Badge>
           <div className="flex flex-col gap-3">
@@ -44,30 +43,28 @@ export function AuthLayout() {
               {copy.title}
             </p>
             <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Esta primeira fatia sobe login, ativacao de convite, hidratacao de
-              sessao e o primeiro shell protegido sem arrastar dados de dominio
-              para o estado global.
+              {copy.supporting}
             </p>
           </div>
           <Separator className="max-w-sm" />
           <div className="grid gap-4 text-sm text-muted-foreground sm:grid-cols-3">
             <div className="glass-card flex flex-col gap-1 rounded-2xl border-white/55 p-4 text-slate-600 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-300">
               <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-800 dark:text-slate-100">
-                Auth
+                Direto
               </span>
-              <span>Email + senha no cliente Supabase</span>
+              <span>Entre com e-mail e senha sem telas paralelas.</span>
             </div>
             <div className="glass-card flex flex-col gap-1 rounded-2xl border-white/55 p-4 text-slate-600 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-300">
               <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-800 dark:text-slate-100">
-                Router
+                Guiado
               </span>
-              <span>Loaders independentes em Data Mode</span>
+              <span>Login e convite deixam claro o proximo passo.</span>
             </div>
             <div className="glass-card flex flex-col gap-1 rounded-2xl border-white/55 p-4 text-slate-600 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-300">
               <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-800 dark:text-slate-100">
-                Store
+                Pronto
               </span>
-              <span>Sessao, role e workspace apenas</span>
+              <span>Ao final, seu espaco ja abre no contexto correto.</span>
             </div>
           </div>
         </section>
