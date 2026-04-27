@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router"
 
 import App from "@/App"
+import AdminPage from "@/pages/admin"
 import DashboardPage from "@/pages/dashboard"
 import InviteActivatePage from "@/pages/invite-activate"
 import LoginPage from "@/pages/login"
@@ -9,6 +10,8 @@ import RouteErrorPage from "@/pages/route-error"
 import AppLayout from "@/routes/layouts/app-layout"
 import AuthLayout from "@/routes/layouts/auth-layout"
 import {
+  adminAction,
+  adminLoader,
   dashboardLoader,
   indexLoader,
   inviteAction,
@@ -61,6 +64,19 @@ export const router = createBrowserRouter([
           {
             path: "sign-out",
             action: signOutAction,
+          },
+        ],
+      },
+      {
+        path: "admin",
+        Component: AppLayout,
+        children: [
+          {
+            id: "admin",
+            index: true,
+            loader: adminLoader,
+            action: adminAction,
+            Component: AdminPage,
           },
         ],
       },

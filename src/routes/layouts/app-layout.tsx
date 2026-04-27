@@ -1,9 +1,10 @@
-import { Form, Outlet } from "react-router"
+import { Form, NavLink, Outlet } from "react-router"
 import { ShieldCheckIcon, TerminalSquareIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/store/auth"
 
 export function AppLayout() {
@@ -41,6 +42,21 @@ export function AppLayout() {
           </div>
 
           <div className="flex items-center gap-3 self-start lg:self-center">
+            {role === "admin" ? (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  cn(
+                    "inline-flex h-9 items-center rounded-2xl border px-4 text-[11px] font-medium tracking-[0.18em] uppercase transition-colors",
+                    isActive
+                      ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
+                      : "border-white/60 bg-white/55 text-slate-700 hover:bg-white/78 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-200 dark:hover:bg-slate-900/80"
+                  )
+                }
+              >
+                Admin
+              </NavLink>
+            ) : null}
             <div className="hidden items-center gap-2 rounded-2xl border border-white/60 bg-white/50 px-3 py-2 text-xs text-slate-600 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-300 sm:flex">
               <ShieldCheckIcon className="size-4 text-emerald-600 dark:text-emerald-300" />
               RLS e contexto ativos

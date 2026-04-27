@@ -1,10 +1,17 @@
 import type { Session } from "@supabase/supabase-js"
+import { redirect } from "react-router"
 
 import { supabase, hasSupabaseEnv } from "@/lib/supabase"
 import { useAuthStore, type AppRole, type WorkspaceContext } from "@/store/auth"
 
 type AuthSnapshot = WorkspaceContext & {
   session: Session | null
+}
+
+export type WorkspaceAccessSnapshot = {
+  role: AppRole
+  session: Session
+  workspaceId: string
 }
 
 type UserRoleRow = {
@@ -147,6 +154,38 @@ export async function syncAuthStoreFromBrowserSession() {
 
   const session = await getBrowserSession()
   return syncAuthStoreFromSession(session)
+}
+
+export async function requireWorkspaceAccess() {
+  if (!hasSupabaseEnv) {
+    throw redirect("/login")
+  }
+
+  const snapshot = await syncAuthStoreFromBrowserSession()
+
+  if (!snapshot.session) {
+    throw redirect("/login")
+  }
+
+  if (!snapshot.workspaceId || !snapshot.role) {
+    throw redirect("/login?needsInvite=1")
+  }
+
+  return {
+    role: snapshot.role,
+    session: snapshot.session,
+    workspaceId: snapshot.workspaceId,
+  } satisfies WorkspaceAccessSnapshot
+}
+
+export async function requireAdminAccess() {
+  const snapshot = await requireWorkspaceAccess()
+
+  if (snapshot.role !== "admin") {
+    throw redirect("/dashboard")
+  }
+
+  return snapshot
 }
 
 export async function claimInvite(code: string) {
