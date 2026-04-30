@@ -28,6 +28,7 @@ import {
   getCurrentOccurredOn,
   type FinanceCategory,
   type FinanceTransaction,
+  type PaymentMethod,
   type TransactionType,
 } from "@/lib/finance"
 import { cn } from "@/lib/utils"
@@ -78,7 +79,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 
 type FeedbackState = {
   kind: "error" | "success"
@@ -95,9 +95,12 @@ type TransactionFormState = {
   categoryId: string
   description: string
   occurredOn: string
+  paymentMethod: PaymentMethod
   repeatMonths: string
   transactionType: TransactionType
 }
+
+type PaymentMethodFilter = PaymentMethod | "all"
 
 const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
@@ -123,6 +126,40 @@ const TRANSACTION_TYPE_COPY: Record<
   },
 }
 
+const PAYMENT_METHOD_COPY: Record<
+  PaymentMethod,
+  {
+    badgeClassName: string
+    label: string
+    shortLabel: string
+  }
+> = {
+  cash: {
+    badgeClassName:
+      "border-slate-200/80 bg-slate-50/85 text-slate-700 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-200",
+    label: "Dinheiro",
+    shortLabel: "Dinheiro",
+  },
+  credit_card: {
+    badgeClassName:
+      "border-amber-200/80 bg-amber-50/85 text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200",
+    label: "Cartao de Credito",
+    shortLabel: "Credito",
+  },
+  debit: {
+    badgeClassName:
+      "border-sky-200/80 bg-sky-50/85 text-sky-700 dark:border-sky-400/30 dark:bg-sky-500/10 dark:text-sky-200",
+    label: "Debito",
+    shortLabel: "Debito",
+  },
+  pix: {
+    badgeClassName:
+      "border-emerald-200/80 bg-emerald-50/85 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200",
+    label: "Pix",
+    shortLabel: "Pix",
+  },
+}
+
 export function DashboardPage() {
   const loaderData = useRouteLoaderData<DashboardLoaderData>("dashboard")
 
@@ -141,6 +178,8 @@ export function DashboardPage() {
   const [pendingIntent, setPendingIntent] = React.useState<
     "create" | "delete" | null
   >(null)
+  const [paymentMethodFilter, setPaymentMethodFilter] =
+    React.useState<PaymentMethodFilter>("all")
   const [transactionToDelete, setTransactionToDelete] =
     React.useState<FinanceTransaction | null>(null)
   const [isMonthTransitionPending, startMonthTransition] = React.useTransition()
@@ -155,6 +194,14 @@ export function DashboardPage() {
   const normalizedFormState = React.useMemo(
     () => normalizeFormState(formState, loaderData.month, filteredCategories),
     [filteredCategories, formState, loaderData.month]
+  )
+  const visibleTransactions = React.useMemo(
+    () =>
+      filterTransactionsByPaymentMethod(
+        loaderData.transactions,
+        paymentMethodFilter
+      ),
+    [loaderData.transactions, paymentMethodFilter]
   )
   const monthOptions = React.useMemo(
     () => buildMonthOptions(),
@@ -171,6 +218,8 @@ export function DashboardPage() {
   const isRevalidating = revalidator.state !== "idle"
   const isCreating = pendingIntent === "create"
   const isDeleting = pendingIntent === "delete"
+  const activePaymentMethod =
+    paymentMethodFilter === "all" ? null : paymentMethodFilter
 
   function handleMonthChange(nextMonth: string) {
     startMonthTransition(() => {
@@ -373,7 +422,7 @@ export function DashboardPage() {
                     {loaderData.monthLabel}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="flex w-full flex-col items-stretch gap-2 text-[11px] text-slate-500 sm:w-auto sm:flex-row sm:items-center sm:justify-end dark:text-slate-400">
                   {isMonthNavigating || isRevalidating ? (
                     <Badge
                       variant="outline"
@@ -383,8 +432,38 @@ export function DashboardPage() {
                       Sincronizando
                     </Badge>
                   ) : null}
+                  <div className="glass-card flex h-9 w-full items-center gap-2 rounded-2xl border-white/60 px-3 sm:w-47.5 dark:border-slate-700/75 dark:bg-slate-950/58">
+                    <Select
+                      value={paymentMethodFilter}
+                      onValueChange={(value) =>
+                        setPaymentMethodFilter(value as PaymentMethodFilter)
+                      }
+                    >
+                      <SelectTrigger
+                        aria-label="Filtrar por meio de pagamento"
+                        className="h-auto w-full border-0 bg-transparent px-0 py-0 pr-0 text-left shadow-none focus-visible:ring-0 dark:bg-transparent"
+                        id="dashboard-payment-method-filter"
+                      >
+                        <SelectValue placeholder="Todos os meios" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="all">Todos os meios</SelectItem>
+                          {Object.entries(PAYMENT_METHOD_COPY).map(
+                            ([value, methodCopy]) => (
+                              <SelectItem key={value} value={value}>
+                                {methodCopy.label}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <span className="font-mono uppercase tracking-[0.18em]">
-                    {loaderData.summary.transactionCount} registros
+                    {activePaymentMethod
+                      ? `${visibleTransactions.length} de ${loaderData.summary.transactionCount} registros`
+                      : `${loaderData.summary.transactionCount} registros`}
                   </span>
                 </div>
               </div>
@@ -411,9 +490,30 @@ export function DashboardPage() {
                     </Button>
                   </CardContent>
                 </Card>
+              ) : visibleTransactions.length === 0 && activePaymentMethod ? (
+                <Card className="glass-card rounded-[24px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55">
+                  <CardHeader className="px-5 pt-5">
+                    <CardTitle>
+                      Nenhum lançamento em {PAYMENT_METHOD_COPY[activePaymentMethod].label} neste mês.
+                    </CardTitle>
+                    <CardDescription>
+                      Existem movimentos em {loaderData.monthLabel}, mas o filtro atual está mostrando apenas um recorte do fluxo.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex px-5 pb-5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      onClick={() => setPaymentMethodFilter("all")}
+                    >
+                      Ver todos os meios
+                    </Button>
+                  </CardContent>
+                </Card>
               ) : (
                 <div className="flex flex-col gap-2.5">
-                  {loaderData.transactions.map((transaction) => (
+                  {visibleTransactions.map((transaction) => (
                     <article
                       key={transaction.id}
                       className="glass-card flex items-center justify-between gap-3 rounded-[18px] border-white/55 px-3.5 py-3 dark:border-slate-700/70 dark:bg-slate-950/55"
@@ -452,7 +552,16 @@ export function DashboardPage() {
                                 transaction.categoryId
                               )}
                             </span>
-                            <Separator orientation="vertical" className="h-3" />
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "h-6 border text-[10px] font-semibold tracking-[0.14em] uppercase",
+                                PAYMENT_METHOD_COPY[transaction.paymentMethod]
+                                  .badgeClassName
+                              )}
+                            >
+                              {PAYMENT_METHOD_COPY[transaction.paymentMethod].shortLabel}
+                            </Badge>
                             <span className="font-mono uppercase tracking-[0.16em]">
                               {formatOccurredOn(transaction.occurredOn)}
                             </span>
@@ -728,6 +837,36 @@ function TransactionEntryForm({
             </Field>
 
             <Field>
+              <FieldLabel htmlFor="transaction-payment-method">
+                Meio de pagamento
+              </FieldLabel>
+              <Select
+                value={formState.paymentMethod}
+                onValueChange={(value) =>
+                  onValueChange("paymentMethod", value as PaymentMethod)
+                }
+              >
+                <SelectTrigger id="transaction-payment-method" className="w-full">
+                  <SelectValue placeholder="Selecione o meio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {Object.entries(PAYMENT_METHOD_COPY).map(
+                      ([value, methodCopy]) => (
+                        <SelectItem key={value} value={value}>
+                          {methodCopy.label}
+                        </SelectItem>
+                      )
+                    )}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                Discrimina cartão, débito, Pix e dinheiro sem alterar a conta cronológica do caixa.
+              </FieldDescription>
+            </Field>
+
+            <Field>
               <FieldLabel htmlFor="transaction-amount">Valor (R$)</FieldLabel>
               <Input
                 id="transaction-amount"
@@ -825,6 +964,7 @@ function createTransactionFormState(month: string): TransactionFormState {
     categoryId: "",
     description: "",
     occurredOn: getDefaultOccurredOn(month),
+    paymentMethod: "cash",
     repeatMonths: "1",
     transactionType: "out",
   }
@@ -866,6 +1006,19 @@ function buildMonthOptions(): MonthOption[] {
   return options
 }
 
+function filterTransactionsByPaymentMethod(
+  transactions: FinanceTransaction[],
+  paymentMethodFilter: PaymentMethodFilter
+) {
+  if (paymentMethodFilter === "all") {
+    return transactions
+  }
+
+  return transactions.filter(
+    (transaction) => transaction.paymentMethod === paymentMethodFilter
+  )
+}
+
 function buildRecurringTransactions(
   formState: TransactionFormState,
   workspaceId: string
@@ -897,6 +1050,7 @@ function buildRecurringTransactions(
     categoryId: formState.categoryId,
     description,
     occurredOn: addMonthsToOccurredOn(formState.occurredOn, index),
+    paymentMethod: formState.paymentMethod,
     recurrenceGroupId,
     transactionType: formState.transactionType,
     workspaceId,

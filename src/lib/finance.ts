@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase"
 
 export type TransactionType = "in" | "out"
 export type CategoryScope = TransactionType | "both"
+export type PaymentMethod = "credit_card" | "debit" | "pix" | "cash"
 
 export type FinanceCategory = {
   id: string
@@ -18,6 +19,7 @@ export type FinanceTransaction = {
   id: string
   notes: string | null
   occurredOn: string
+  paymentMethod: PaymentMethod
   recurrenceGroupId: string | null
   transactionType: TransactionType
 }
@@ -42,6 +44,7 @@ export type CreateTransactionInput = {
   description: string
   notes?: string | null
   occurredOn: string
+  paymentMethod: PaymentMethod
   recurrenceGroupId: string | null
   transactionType: TransactionType
   workspaceId: string
@@ -62,6 +65,7 @@ type TransactionRow = {
   id: string
   notes: string | null
   occurred_on: string
+  payment_method: PaymentMethod
   recurrence_group_id: string | null
   transaction_type: TransactionType
 }
@@ -157,7 +161,7 @@ export async function getDashboardData(month: string) {
     supabase
       .from("transactions")
       .select(
-        "id, description, transaction_type, amount, occurred_on, notes, recurrence_group_id, category_id, created_at"
+        "id, description, transaction_type, payment_method, amount, occurred_on, notes, recurrence_group_id, category_id, created_at"
       )
       .order("occurred_on", { ascending: false })
       .order("created_at", { ascending: false }),
@@ -198,6 +202,7 @@ export async function createTransactions(entries: CreateTransactionInput[]) {
       description: entry.description,
       notes: entry.notes ?? null,
       occurred_on: entry.occurredOn,
+      payment_method: entry.paymentMethod,
       recurrence_group_id: entry.recurrenceGroupId,
       transaction_type: entry.transactionType,
       workspace_id: entry.workspaceId,
@@ -305,6 +310,7 @@ function mapTransactionRow(row: TransactionRow): FinanceTransaction {
     id: row.id,
     notes: row.notes,
     occurredOn: row.occurred_on,
+    paymentMethod: row.payment_method,
     recurrenceGroupId: row.recurrence_group_id,
     transactionType: row.transaction_type,
   }

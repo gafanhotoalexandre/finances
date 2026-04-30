@@ -7,7 +7,7 @@ Project Finance e um app de fluxo de caixa pessoal com login simples, convites p
 - v0.2.4 validada: sessao blindada entre Supabase, Zustand e React Router com a rota `/handoff`.
 - shell de auth refinada: linguagem mais humana, superficie mais limpa e fluxo sem estados intermediarios falsos.
 - v0.2 encerrada: rota `/admin` com emissao, revogacao e historico administrativo de convites.
-- v0.3.0 em foco: inteligencia financeira no Dashboard com `Saldo Anterior` e `Caixa Atual`.
+- v0.3.1 em foco: meios de pagamento no Dashboard com discriminacao visual, filtro local e cadastro no proprio lancamento.
 
 ## Stack
 
@@ -66,6 +66,15 @@ Arquivos relacionados:
 4. Confirme que `Caixa Atual` e igual a `Saldo Anterior + Entradas - Saidas`.
 5. Navegue entre meses com e sem movimentos e valide que o card destacado continua contando a historia cronologica correta.
 6. Confirme que a lista `Lancamentos do mes` continua exibindo apenas as transacoes da competencia selecionada.
+
+## Validacao rapida da v0.3.1
+
+1. Aplique a nova migration de `payment_method` em `supabase/migrations/20260430120000_transactions_payment_method.sql`.
+2. Entre em `/dashboard` e crie ao menos um lancamento em cada meio de pagamento: `credit_card`, `debit`, `pix` e `cash`.
+3. Confirme que a listagem mensal mostra um badge visual para o meio de pagamento sem alterar a ordem nem a leitura do lancamento.
+4. Use o filtro `Todos os meios` e troque para um metodo especifico, confirmando que o recorte acontece apenas na lista do mes aberto.
+5. Crie um lancamento com repeticao maior que `1` e confirme que todas as parcelas futuras herdam o mesmo `payment_method`.
+6. Revalide que `Saldo Anterior`, `Entradas`, `Saidas` e `Caixa Atual` continuam com a mesma matematica cronologica de v0.3.0.
 
 ## Validacao rapida da v0.2.5
 
@@ -128,6 +137,8 @@ Importante: essa migracao e destrutiva para os dados dessas tabelas. Use em ambi
 
 ### v0.3
 
+- discriminacao de `payment_method` com `credit_card`, `debit`, `pix` e `cash`
+- filtro local por meio de pagamento na lista do dashboard
 - saldo anterior acumulado antes da competencia aberta
 - caixa atual calculado a partir do historico + movimentos do mes
 - ampliar operacoes e acompanhamento do caixa
