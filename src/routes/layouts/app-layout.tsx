@@ -1,4 +1,4 @@
-import { Form, NavLink, Outlet } from "react-router"
+import { Form, NavLink, Outlet, useNavigation } from "react-router"
 import { ShieldCheckIcon, TerminalSquareIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -9,9 +9,14 @@ import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/store/auth"
 
 export function AppLayout() {
+  const navigation = useNavigation()
   const session = useAuthStore((state) => state.session)
   const role = useAuthStore((state) => state.role)
   const workspaceId = useAuthStore((state) => state.workspaceId)
+  const isSigningOut =
+    navigation.state === "submitting" &&
+    navigation.formMethod?.toLowerCase() === "post" &&
+    navigation.formAction?.endsWith("/dashboard/sign-out")
 
   return (
     <div className="bg-blueprint relative min-h-svh overflow-hidden">
@@ -63,8 +68,8 @@ export function AppLayout() {
               RLS e contexto ativos
             </div>
             <Form method="post" action="/dashboard/sign-out">
-              <Button variant="outline" type="submit">
-                Sair
+              <Button variant="outline" type="submit" disabled={isSigningOut}>
+                {isSigningOut ? "Saindo..." : "Sair"}
               </Button>
             </Form>
           </div>

@@ -17,6 +17,12 @@ const copyByPath: Record<
       "Entre com calma e retome sua rotina financeira do ponto em que parou.",
     title: "Um acesso simples, limpo e pronto para levar voce de volta ao caixa.",
   },
+  "/handoff": {
+    eyebrow: "Transicao segura",
+    supporting:
+      "Estamos confirmando sua sessao e preparando o proximo passo sem te devolver para um estado intermediario.",
+    title: "Seu acesso esta mudando de etapa. Falta so um instante.",
+  },
 }
 
 export function AuthLayout() {

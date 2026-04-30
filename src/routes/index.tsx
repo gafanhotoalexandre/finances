@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router"
 
 import App from "@/App"
 import AdminPage from "@/pages/admin"
+import AuthHandoffPage from "@/pages/auth-handoff"
 import DashboardPage from "@/pages/dashboard"
 import InviteActivatePage from "@/pages/invite-activate"
 import LoginPage from "@/pages/login"
@@ -42,6 +43,10 @@ export const router = createBrowserRouter([
             loader: loginLoader,
             action: loginAction,
             Component: LoginPage,
+          },
+          {
+            path: "handoff",
+            Component: AuthHandoffPage,
           },
           {
             path: "invite/:code",

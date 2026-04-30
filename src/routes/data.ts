@@ -4,14 +4,16 @@ import { redirect } from "react-router"
 import {
   SUPABASE_CONFIGURATION_MESSAGE,
   claimInvite,
+  getAuthSnapshotFromSession,
+  getBrowserAuthSnapshot,
   getBrowserSession,
   getFriendlyErrorMessage,
   requireAdminAccess,
   requireWorkspaceAccess,
   signOutAndClearAuth,
-  syncAuthStoreFromBrowserSession,
   type WorkspaceAccessSnapshot,
 } from "@/lib/auth"
+import { buildSessionHandoffPath } from "@/lib/session-handoff"
 import {
   formatMonthLabel,
   getCurrentMonthParam,
@@ -185,7 +187,7 @@ export async function indexLoader() {
     throw redirect("/login")
   }
 
-  const snapshot = await syncAuthStoreFromBrowserSession()
+  const snapshot = await getBrowserAuthSnapshot()
   if (snapshot.session && snapshot.workspaceId) {
     throw redirect("/dashboard")
   }
@@ -206,7 +208,7 @@ export async function loginLoader({ request }: LoaderFunctionArgs) {
     } satisfies LoginLoaderData
   }
 
-  const snapshot = await syncAuthStoreFromBrowserSession()
+  const snapshot = await getBrowserAuthSnapshot()
   if (snapshot.session && snapshot.workspaceId) {
     throw redirect("/dashboard")
   }
@@ -236,7 +238,7 @@ export async function inviteLoader({ params }: LoaderFunctionArgs) {
     } satisfies InviteLoaderData
   }
 
-  const snapshot = await syncAuthStoreFromBrowserSession()
+  const snapshot = await getBrowserAuthSnapshot()
   if (snapshot.session && snapshot.workspaceId) {
     throw redirect("/dashboard")
   }
@@ -302,7 +304,7 @@ export async function loginAction({ request }: ActionFunctionArgs) {
     } satisfies LoginActionData
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -314,9 +316,19 @@ export async function loginAction({ request }: ActionFunctionArgs) {
     } satisfies LoginActionData
   }
 
-  const snapshot = await syncAuthStoreFromBrowserSession()
-  if (snapshot.workspaceId) {
-    throw redirect("/dashboard")
+  const session = data.session ?? (await getBrowserSession())
+
+  if (!session) {
+    return {
+      error:
+        "A entrada foi aceita, mas a sessao ainda nao ficou pronta. Tente novamente em instantes.",
+      info: null,
+    } satisfies LoginActionData
+  }
+
+  const snapshot = await getAuthSnapshotFromSession(session)
+  if (snapshot.workspaceId && snapshot.role) {
+    throw redirect(buildSessionHandoffPath("login", "/dashboard"))
   }
 
   return {
@@ -379,16 +391,6 @@ export async function inviteAction({ params, request }: ActionFunctionArgs) {
 
   try {
     await claimInvite(code)
-    const snapshot = await syncAuthStoreFromBrowserSession()
-
-    if (snapshot.workspaceId && snapshot.role) {
-      throw redirect("/dashboard")
-    }
-
-    return {
-      error: null,
-      info: "O convite foi ativado, mas seu acesso ainda nao ficou pronto. Tente entrar novamente em instantes.",
-    } satisfies InviteActionData
   } catch (error) {
     return {
       error: getFriendlyErrorMessage(
@@ -398,6 +400,8 @@ export async function inviteAction({ params, request }: ActionFunctionArgs) {
       info: null,
     } satisfies InviteActionData
   }
+
+  throw redirect(buildSessionHandoffPath("invite", "/dashboard"))
 }
 
 export async function adminAction({ request }: ActionFunctionArgs) {
@@ -433,7 +437,7 @@ export async function signOutAction() {
     }
   }
 
-  throw redirect("/login")
+  throw redirect(buildSessionHandoffPath("logout", "/login"))
 }
 
 async function handleCreateInviteAction(

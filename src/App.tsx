@@ -1,7 +1,12 @@
 import * as React from "react"
+import type { Session } from "@supabase/supabase-js"
 import { Outlet, ScrollRestoration } from "react-router"
 
-import { syncAuthStoreFromBrowserSession } from "@/lib/auth"
+import {
+  applyAuthSnapshot,
+  getAuthSnapshotFromSession,
+  getBrowserAuthSnapshot,
+} from "@/lib/auth"
 import { hasSupabaseEnv, supabase } from "@/lib/supabase"
 import { useAuthStore } from "@/store/auth"
 
@@ -12,32 +17,68 @@ export function App() {
       return undefined
     }
 
-    void syncAuthStoreFromBrowserSession()
+    let cancelled = false
+    let syncVersion = 0
 
-    let syncTimer: number | null = null
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      useAuthStore.getState().setSession(session)
+    function isStale(version: number) {
+      return cancelled || version !== syncVersion
+    }
 
-      if (syncTimer !== null) {
-        window.clearTimeout(syncTimer)
-        syncTimer = null
-      }
+    async function syncFromBrowserSession() {
+      const version = ++syncVersion
 
-      if (session === null) {
+      try {
+        const snapshot = await getBrowserAuthSnapshot()
+
+        if (isStale(version)) {
+          return
+        }
+
+        applyAuthSnapshot(snapshot)
+      } catch {
+        if (isStale(version)) {
+          return
+        }
+
         useAuthStore.getState().clearAuth()
-        return
       }
+    }
 
-      syncTimer = window.setTimeout(() => {
-        void syncAuthStoreFromBrowserSession()
-      }, 0)
+    async function syncFromAuthChange(session: Session | null) {
+      const version = ++syncVersion
+
+      try {
+        const snapshot = await getAuthSnapshotFromSession(session)
+
+        if (isStale(version)) {
+          return
+        }
+
+        applyAuthSnapshot(snapshot)
+      } catch {
+        if (isStale(version)) {
+          return
+        }
+
+        if (session === null) {
+          useAuthStore.getState().clearAuth()
+          return
+        }
+
+        useAuthStore.getState().setSession(session)
+        useAuthStore.getState().clearWorkspaceContext()
+      }
+    }
+
+    void syncFromBrowserSession()
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      void syncFromAuthChange(session)
     })
 
     return () => {
-      if (syncTimer !== null) {
-        window.clearTimeout(syncTimer)
-      }
-
+      cancelled = true
+      syncVersion += 1
       data.subscription.unsubscribe()
     }
   }, [])

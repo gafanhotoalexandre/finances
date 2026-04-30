@@ -29,6 +29,14 @@ type ClaimInviteRow = {
 export const SUPABASE_CONFIGURATION_MESSAGE =
   "As chaves do Supabase ainda nao foram configuradas. Preencha VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para liberar login e convite."
 
+function createEmptyAuthSnapshot() {
+  return {
+    role: null,
+    session: null,
+    workspaceId: null,
+  } satisfies AuthSnapshot
+}
+
 const friendlyErrors: Record<string, string> = {
   AUTHENTICATION_REQUIRED: "Voce precisa estar autenticado para continuar.",
   INVITE_ALREADY_USED: "Esse convite ja foi utilizado.",
@@ -121,20 +129,27 @@ export async function fetchWorkspaceContext(userId: string) {
   } satisfies WorkspaceContext
 }
 
-export async function syncAuthStoreFromSession(session: Session | null) {
-  if (session === null) {
+export function applyAuthSnapshot(snapshot: AuthSnapshot) {
+  if (snapshot.session === null) {
     useAuthStore.getState().clearAuth()
-    return {
-      role: null,
-      session: null,
-      workspaceId: null,
-    } satisfies AuthSnapshot
+    return snapshot
   }
 
-  useAuthStore.getState().setSession(session)
+  useAuthStore.getState().setSession(snapshot.session)
+  useAuthStore.getState().setWorkspaceContext({
+    role: snapshot.role,
+    workspaceId: snapshot.workspaceId,
+  })
+
+  return snapshot
+}
+
+export async function getAuthSnapshotFromSession(session: Session | null) {
+  if (session === null) {
+    return createEmptyAuthSnapshot()
+  }
 
   const context = await fetchWorkspaceContext(session.user.id)
-  useAuthStore.getState().setWorkspaceContext(context)
 
   return {
     session,
@@ -142,18 +157,23 @@ export async function syncAuthStoreFromSession(session: Session | null) {
   } satisfies AuthSnapshot
 }
 
-export async function syncAuthStoreFromBrowserSession() {
+export async function getBrowserAuthSnapshot() {
   if (!hasSupabaseEnv) {
-    useAuthStore.getState().clearAuth()
-    return {
-      role: null,
-      session: null,
-      workspaceId: null,
-    } satisfies AuthSnapshot
+    return createEmptyAuthSnapshot()
   }
 
   const session = await getBrowserSession()
-  return syncAuthStoreFromSession(session)
+  return getAuthSnapshotFromSession(session)
+}
+
+export async function syncAuthStoreFromSession(session: Session | null) {
+  const snapshot = await getAuthSnapshotFromSession(session)
+  return applyAuthSnapshot(snapshot)
+}
+
+export async function syncAuthStoreFromBrowserSession() {
+  const snapshot = await getBrowserAuthSnapshot()
+  return applyAuthSnapshot(snapshot)
 }
 
 export async function requireWorkspaceAccess() {
@@ -161,7 +181,7 @@ export async function requireWorkspaceAccess() {
     throw redirect("/login")
   }
 
-  const snapshot = await syncAuthStoreFromBrowserSession()
+  const snapshot = await getBrowserAuthSnapshot()
 
   if (!snapshot.session) {
     throw redirect("/login")
