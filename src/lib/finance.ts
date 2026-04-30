@@ -23,7 +23,8 @@ export type FinanceTransaction = {
 }
 
 export type DashboardSummary = {
-  balance: number
+  currentBalance: number
+  previousBalance: number
   totalIn: number
   totalOut: number
   transactionCount: number
@@ -158,8 +159,6 @@ export async function getDashboardData(month: string) {
       .select(
         "id, description, transaction_type, amount, occurred_on, notes, recurrence_group_id, category_id, created_at"
       )
-      .gte("occurred_on", startDate)
-      .lt("occurred_on", endDate)
       .order("occurred_on", { ascending: false })
       .order("created_at", { ascending: false }),
   ])
@@ -175,13 +174,18 @@ export async function getDashboardData(month: string) {
   const categories = ((categoriesResult.data ?? []) as CategoryRow[]).map(
     mapCategoryRow
   )
-  const transactions = ((transactionsResult.data ?? []) as TransactionRow[]).map(
+  const allTransactions = ((transactionsResult.data ?? []) as TransactionRow[]).map(
     mapTransactionRow
+  )
+  const transactions = filterTransactionsByMonth(
+    allTransactions,
+    startDate,
+    endDate
   )
 
   return {
     categories,
-    summary: summarizeTransactions(transactions),
+    summary: summarizeTransactions(allTransactions, startDate, endDate),
     transactions,
   } satisfies DashboardData
 }
@@ -306,26 +310,59 @@ function mapTransactionRow(row: TransactionRow): FinanceTransaction {
   }
 }
 
-function summarizeTransactions(transactions: FinanceTransaction[]): DashboardSummary {
-  const totalIn = transactions.reduce((sum, transaction) => {
-    if (transaction.transactionType !== "in") {
-      return sum
+function filterTransactionsByMonth(
+  transactions: FinanceTransaction[],
+  startDate: string,
+  endDate: string
+) {
+  return transactions.filter(
+    (transaction) =>
+      transaction.occurredOn >= startDate && transaction.occurredOn < endDate
+  )
+}
+
+function summarizeTransactions(
+  transactions: FinanceTransaction[],
+  startDate: string,
+  endDate: string
+): DashboardSummary {
+  let previousBalance = 0
+  let totalIn = 0
+  let totalOut = 0
+  let transactionCount = 0
+
+  for (const transaction of transactions) {
+    const signedAmount =
+      transaction.transactionType === "in"
+        ? transaction.amount
+        : -transaction.amount
+
+    if (transaction.occurredOn < startDate) {
+      previousBalance += signedAmount
+      continue
     }
 
-    return sum + transaction.amount
-  }, 0)
-  const totalOut = transactions.reduce((sum, transaction) => {
-    if (transaction.transactionType !== "out") {
-      return sum
+    if (transaction.occurredOn >= endDate) {
+      continue
     }
 
-    return sum + transaction.amount
-  }, 0)
+    transactionCount += 1
+
+    if (transaction.transactionType === "in") {
+      totalIn += transaction.amount
+      continue
+    }
+
+    totalOut += transaction.amount
+  }
+
+  const currentBalance = previousBalance + totalIn - totalOut
 
   return {
-    balance: totalIn - totalOut,
+    currentBalance,
+    previousBalance,
     totalIn,
     totalOut,
-    transactionCount: transactions.length,
+    transactionCount,
   }
 }

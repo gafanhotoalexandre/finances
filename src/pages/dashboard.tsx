@@ -9,6 +9,7 @@ import {
   ArrowDownRightIcon,
   ArrowUpRightIcon,
   CalendarDaysIcon,
+  Clock3Icon,
   LoaderCircleIcon,
   MinusIcon,
   PlusIcon,
@@ -291,7 +292,7 @@ export function DashboardPage() {
                   </Badge>
                 </div>
                 <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Resumo mensal, ledger real e cadastro rápido numa superfície mais direta, sem ruído visual desnecessário.
+                  Saldo herdado, movimentos do mês e caixa atual numa leitura cronológica mais fiel ao fluxo de caixa real.
                 </p>
               </div>
             </div>
@@ -333,7 +334,19 @@ export function DashboardPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-3 md:grid-cols-3 md:gap-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 md:gap-4">
+            <SummaryMetricCard
+              accent={
+                loaderData.summary.previousBalance > 0
+                  ? "emerald"
+                  : loaderData.summary.previousBalance < 0
+                    ? "rose"
+                    : "slate"
+              }
+              icon={Clock3Icon}
+              label="Saldo anterior"
+              value={loaderData.summary.previousBalance}
+            />
             <SummaryMetricCard
               accent="emerald"
               icon={ArrowUpRightIcon}
@@ -346,7 +359,7 @@ export function DashboardPage() {
               label="Saídas"
               value={loaderData.summary.totalOut}
             />
-            <BalanceMetricCard value={loaderData.summary.balance} />
+            <BalanceMetricCard value={loaderData.summary.currentBalance} />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_360px] lg:gap-8">
@@ -379,14 +392,14 @@ export function DashboardPage() {
               {loaderData.transactions.length === 0 ? (
                 <Card className="glass-card rounded-[24px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55">
                   <CardHeader className="px-5 pt-5">
-                    <CardTitle>Mês vazio, leitura limpa.</CardTitle>
+                    <CardTitle>Sem movimentos neste mês.</CardTitle>
                     <CardDescription>
-                      Os totais estão zerados porque ainda não existem lançamentos persistidos em {loaderData.monthLabel}. O próximo passo é registrar a primeira entrada ou saída.
+                      Ainda não existem entradas ou saídas persistidas em {loaderData.monthLabel}. O caixa atual continua refletindo o saldo acumulado até o fechamento do mês anterior.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-3 px-5 pb-5">
                     <div className="rounded-2xl border border-dashed border-slate-300/80 bg-slate-50/70 px-4 py-4 text-sm text-slate-600 dark:border-slate-600/60 dark:bg-slate-900/40 dark:text-slate-300">
-                      Esta fase não inventa projeções. O dashboard só mostra dados reais que já vivem em <span className="font-mono">public.transactions</span>.
+                      Esta fase não inventa projeções. O dashboard cruza saldo anterior, movimentos do mês e caixa atual usando apenas dados reais que já vivem em <span className="font-mono">public.transactions</span>.
                     </div>
                     <Button
                       type="button"
@@ -573,7 +586,7 @@ export function DashboardPage() {
 }
 
 type SummaryMetricCardProps = {
-  accent: "emerald" | "rose"
+  accent: "emerald" | "rose" | "slate"
   icon: React.ComponentType<React.ComponentProps<"svg">>
   label: string
   value: number
@@ -601,7 +614,9 @@ function SummaryMetricCard({
             "flex size-9 shrink-0 items-center justify-center rounded-xl",
             accent === "emerald"
               ? "bg-emerald-100/80 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"
-              : "bg-rose-100/80 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300"
+              : accent === "rose"
+                ? "bg-rose-100/80 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300"
+                : "bg-slate-200/90 text-slate-600 dark:bg-slate-800/80 dark:text-slate-300"
           )}
         >
           <Icon className="size-4" />
@@ -617,13 +632,21 @@ function BalanceMetricCard({ value }: { value: number }) {
       <CardContent className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5 sm:py-5">
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-indigo-400" />
+            <span
+              className={cn(
+                "size-2 rounded-full",
+                value < 0 ? "bg-rose-400" : "bg-indigo-400"
+              )}
+            />
             <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-slate-400">
-              Margem livre
+              Caixa atual
             </span>
           </div>
           <span className="font-mono text-2xl font-semibold tracking-tight sm:text-3xl">
             {BRL_FORMATTER.format(value)}
+          </span>
+          <span className="text-xs leading-5 text-slate-400">
+            Saldo anterior + entradas do mês - saídas do mês.
           </span>
         </div>
         <WalletIcon className="mt-1 size-4 shrink-0 text-slate-400" />

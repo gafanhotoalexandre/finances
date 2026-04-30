@@ -6,8 +6,8 @@ Project Finance e um app de fluxo de caixa pessoal com login simples, convites p
 
 - v0.2.4 validada: sessao blindada entre Supabase, Zustand e React Router com a rota `/handoff`.
 - shell de auth refinada: linguagem mais humana, superficie mais limpa e fluxo sem estados intermediarios falsos.
-- v0.2 ativa: rota `/admin` com emissao e revogacao de convites.
-- v0.2.5 em foco: UX mobile-first em `/admin`, `/login` e `/invite/:code`.
+- v0.2 encerrada: rota `/admin` com emissao, revogacao e historico administrativo de convites.
+- v0.3.0 em foco: inteligencia financeira no Dashboard com `Saldo Anterior` e `Caixa Atual`.
 
 ## Stack
 
@@ -57,6 +57,15 @@ Arquivos relacionados:
 3. Aplique as migrations em `supabase/migrations/` no projeto Supabase, incluindo foundation, snapshots de historico e ajuste de RLS para convites isolados.
 4. Confirme que `Confirm email` esta desativado em `Authentication`.
 5. Rode `npm run dev`.
+
+## Validacao rapida da v0.3.0
+
+1. Entre em `/dashboard` com um workspace que tenha transacoes em meses anteriores e no mes atual.
+2. Confirme que `Saldo Anterior` mostra a soma acumulada de todas as transacoes antes do primeiro dia do mes visualizado.
+3. Confirme que `Entradas` e `Saidas` mostram apenas os movimentos do mes aberto na URL.
+4. Confirme que `Caixa Atual` e igual a `Saldo Anterior + Entradas - Saidas`.
+5. Navegue entre meses com e sem movimentos e valide que o card destacado continua contando a historia cronologica correta.
+6. Confirme que a lista `Lancamentos do mes` continua exibindo apenas as transacoes da competencia selecionada.
 
 ## Validacao rapida da v0.2.5
 
@@ -119,5 +128,6 @@ Importante: essa migracao e destrutiva para os dados dessas tabelas. Use em ambi
 
 ### v0.3
 
-- aprofundar o fluxo financeiro
+- saldo anterior acumulado antes da competencia aberta
+- caixa atual calculado a partir do historico + movimentos do mes
 - ampliar operacoes e acompanhamento do caixa
