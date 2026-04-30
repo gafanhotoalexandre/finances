@@ -4,10 +4,10 @@ Project Finance e um app de fluxo de caixa pessoal com login simples, convites p
 
 ## Estado atual
 
-- v0.1 validada: login, ativacao de convite e dashboard mensal protegido.
-- shell de auth refinada: linguagem mais humana, superficie mais limpa e foco em conclusao rapida do acesso.
+- v0.2.4 validada: sessao blindada entre Supabase, Zustand e React Router com a rota `/handoff`.
+- shell de auth refinada: linguagem mais humana, superficie mais limpa e fluxo sem estados intermediarios falsos.
 - v0.2 ativa: rota `/admin` com emissao e revogacao de convites.
-- v0.2.1 em foco: convites para membro do workspace atual e para novo workspace isolado.
+- v0.2.5 em foco: UX mobile-first em `/admin`, `/login` e `/invite/:code`.
 
 ## Stack
 
@@ -23,6 +23,7 @@ Project Finance e um app de fluxo de caixa pessoal com login simples, convites p
 ## Rotas ativas
 
 - `/login`
+- `/handoff`
 - `/invite/:code`
 - `/dashboard`
 - `/admin`
@@ -56,6 +57,15 @@ Arquivos relacionados:
 3. Aplique as migrations em `supabase/migrations/` no projeto Supabase, incluindo foundation, snapshots de historico e ajuste de RLS para convites isolados.
 4. Confirme que `Confirm email` esta desativado em `Authentication`.
 5. Rode `npm run dev`.
+
+## Validacao rapida da v0.2.5
+
+1. Abra `/login` e confirme que, no celular, o formulario aparece antes do bloco institucional.
+2. Abra `/invite/:code` e confirme a mesma prioridade: acao primeiro, apoio depois.
+3. Entre em `/admin` no celular e confirme que o bloco `Criar convite` aparece antes das metricas e do historico.
+4. Gere um convite e valide que o historico mobile mostra cards sanfonados com status e destino no estado fechado.
+5. Expanda um convite no mobile e confirme validade, identificador de ativacao e acao de `Revogar`.
+6. Confirme contraste de inputs e botoes no Dark Mode em `/login`, `/invite/:code` e `/admin`.
 
 ## Validacao rapida da v0.2.1
 
@@ -100,10 +110,12 @@ Importante: essa migracao e destrutiva para os dados dessas tabelas. Use em ambi
 ### v0.2
 
 - rota `/admin`
+- rota `/handoff` para transicao segura entre login, convite e logout
 - criacao de convites com codigo no formato `FIN-AAAA-XXXX`
 - opcao entre membro do workspace atual e novo workspace isolado
 - revogacao com historico preservado
 - fluxo completo admin -> convite -> ativacao -> dashboard
+- reestruturacao mobile-first em `/admin`, `/login` e `/invite/:code`
 
 ### v0.3
 

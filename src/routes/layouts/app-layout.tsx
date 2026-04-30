@@ -21,8 +21,8 @@ export function AppLayout() {
   return (
     <div className="bg-blueprint relative min-h-svh overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.07),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.08),transparent_28%)]" />
-      <header className="relative z-10 px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6">
-        <div className="glass-card mx-auto flex w-full max-w-6xl flex-col gap-4 rounded-[28px] border-white/55 px-5 py-5 dark:border-slate-700/70 dark:bg-slate-950/55 lg:flex-row lg:items-center lg:justify-between">
+      <header className="relative z-10 px-3 pt-3 sm:px-6 lg:px-8 lg:pt-6">
+        <div className="glass-card mx-auto flex w-full max-w-6xl flex-col gap-3 rounded-[24px] border-white/55 px-4 py-4 dark:border-slate-700/70 dark:bg-slate-950/55 sm:gap-4 sm:px-5 sm:py-5 lg:rounded-[28px] lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-300">
               <TerminalSquareIcon className="size-4" />
@@ -38,22 +38,24 @@ export function AppLayout() {
                 v{APP_VERSION}
               </Badge>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-              <span>{session?.user.email ?? "Sessao sem e-mail"}</span>
-              <Separator orientation="vertical" className="h-4" />
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
+              <span className="max-w-full truncate sm:max-w-none">
+                {session?.user.email ?? "Sessao sem e-mail"}
+              </span>
+              <Separator orientation="vertical" className="hidden h-4 sm:block" />
               <span className="font-mono uppercase">{role ?? "sem role"}</span>
-              <Separator orientation="vertical" className="h-4" />
+              <Separator orientation="vertical" className="hidden h-4 sm:block" />
               <span className="font-mono text-xs">{workspaceId ?? "sem workspace"}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-start lg:self-center">
+          <div className="flex w-full flex-wrap items-center gap-2 self-start lg:w-auto lg:self-center">
             {role === "admin" ? (
               <NavLink
                 to="/admin"
                 className={({ isActive }) =>
                   cn(
-                    "inline-flex h-9 items-center rounded-2xl border px-4 text-[11px] font-medium tracking-[0.18em] uppercase transition-colors",
+                    "inline-flex h-8 items-center rounded-2xl border px-3 text-[10px] font-medium tracking-[0.18em] uppercase transition-colors sm:h-9 sm:px-4 sm:text-[11px]",
                     isActive
                       ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
                       : "border-white/60 bg-white/55 text-slate-700 hover:bg-white/78 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-200 dark:hover:bg-slate-900/80"
@@ -68,7 +70,12 @@ export function AppLayout() {
               RLS e contexto ativos
             </div>
             <Form method="post" action="/dashboard/sign-out">
-              <Button variant="outline" type="submit" disabled={isSigningOut}>
+              <Button
+                variant="outline"
+                type="submit"
+                disabled={isSigningOut}
+                className="h-8 px-3 sm:h-9 sm:px-4"
+              >
                 {isSigningOut ? "Saindo..." : "Sair"}
               </Button>
             </Form>
@@ -76,7 +83,7 @@ export function AppLayout() {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
         <Outlet />
       </main>
     </div>

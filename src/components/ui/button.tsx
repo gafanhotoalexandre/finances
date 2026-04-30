@@ -17,7 +17,7 @@ const buttonVariants = cva(
         default:
           `bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 ${CTA_PASSTHROUGH_CLASSES}`,
         outline:
-          `border-border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground ${CTA_PASSTHROUGH_CLASSES}`,
+          `border-border bg-background/88 text-foreground shadow-xs hover:bg-accent/80 hover:text-accent-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground dark:border-slate-600/80 dark:bg-slate-950/72 dark:text-slate-100 dark:hover:bg-slate-900 dark:hover:text-slate-50 ${CTA_PASSTHROUGH_CLASSES}`,
         secondary:
           `bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/90 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground ${CTA_PASSTHROUGH_CLASSES}`,
         ghost:

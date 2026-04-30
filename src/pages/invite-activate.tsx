@@ -32,7 +32,7 @@ export function InviteActivatePage() {
 
   return (
     <Card className="glass-card rounded-[28px] border-white/55 bg-white/84 py-0 shadow-[0_24px_64px_-32px_rgba(15,23,42,0.45)] dark:border-slate-700/70 dark:bg-slate-950/60">
-      <CardHeader className="px-6 pt-6">
+      <CardHeader className="px-5 pt-5 sm:px-6 sm:pt-6">
         <CardAction>
           <Badge
             variant="outline"
@@ -41,7 +41,7 @@ export function InviteActivatePage() {
             Convite
           </Badge>
         </CardAction>
-        <CardTitle className="text-xl text-slate-800 dark:text-slate-100">
+        <CardTitle className="text-lg text-slate-800 sm:text-xl dark:text-slate-100">
           Entrar com convite
         </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-300">
@@ -49,8 +49,9 @@ export function InviteActivatePage() {
           espaco no mesmo fluxo.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6 px-6 pb-6">
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+      <CardContent className="flex flex-col gap-5 px-5 pb-5 sm:gap-6 sm:px-6 sm:pb-6">
+        <div className="rounded-[22px] border border-indigo-200/80 bg-indigo-50/72 px-4 py-4 text-sm text-slate-600 dark:border-indigo-400/20 dark:bg-indigo-500/10 dark:text-slate-300">
+          <div className="flex flex-wrap items-center gap-2">
           <Badge
             variant="secondary"
             className="bg-indigo-100 text-indigo-700 font-mono tracking-[0.16em] uppercase dark:bg-indigo-500/15 dark:text-indigo-200"
@@ -62,6 +63,7 @@ export function InviteActivatePage() {
               ? `Voce entrou como ${loaderData.sessionEmail}. Agora falta apenas confirmar.`
               : "Crie sua conta agora para terminar a entrada sem sair desta tela."}
           </span>
+          </div>
         </div>
 
         <Form method="post" className="flex flex-col gap-6">
@@ -118,6 +120,7 @@ export function InviteActivatePage() {
 
           <Button
             type="submit"
+            size="lg"
             className="auth-cta auth-invite-cta w-full"
             disabled={!loaderData.configured || isSubmitting}
           >
@@ -130,7 +133,7 @@ export function InviteActivatePage() {
         </Form>
 
         {!isSignedIn ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="rounded-[22px] border border-slate-200/80 bg-white/72 px-4 py-4 text-sm text-slate-500 dark:border-slate-700/70 dark:bg-slate-950/45 dark:text-slate-400">
             Ja possui conta? Entre pela <Link className="underline underline-offset-4 hover:text-foreground" to="/login">tela de login</Link> e depois volte a este mesmo convite.
           </p>
         ) : null}

@@ -104,21 +104,21 @@ export function AuthHandoffPage() {
 
   return (
     <Card className="glass-card rounded-[28px] border-white/55 bg-white/84 py-0 shadow-[0_24px_64px_-32px_rgba(15,23,42,0.45)] dark:border-slate-700/70 dark:bg-slate-950/60">
-      <CardHeader className="px-6 pt-6">
+      <CardHeader className="px-5 pt-5 sm:px-6 sm:pt-6">
         <Badge
           variant="outline"
           className="w-fit border-slate-200/90 bg-slate-50/85 text-slate-700 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-200"
         >
           {copy.eyebrow}
         </Badge>
-        <CardTitle className="pt-2 text-xl text-slate-800 dark:text-slate-100">
+        <CardTitle className="pt-2 text-lg text-slate-800 sm:text-xl dark:text-slate-100">
           {copy.title}
         </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-300">
           {copy.description}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4 px-6 pb-6">
+      <CardContent className="flex flex-col gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
         <div className="flex items-center gap-3 rounded-[22px] border border-slate-200/80 bg-white/74 px-4 py-4 dark:border-slate-700/70 dark:bg-slate-950/55">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900">
             <LoaderCircleIcon className="size-4 animate-spin" />

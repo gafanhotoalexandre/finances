@@ -32,7 +32,7 @@ export function LoginPage() {
 
   return (
     <Card className="glass-card rounded-[28px] border-white/55 bg-white/84 py-0 shadow-[0_24px_64px_-32px_rgba(15,23,42,0.45)] dark:border-slate-700/70 dark:bg-slate-950/60">
-      <CardHeader className="px-6 pt-6">
+      <CardHeader className="px-5 pt-5 sm:px-6 sm:pt-6">
         <CardAction>
           <Badge
             variant="outline"
@@ -41,14 +41,14 @@ export function LoginPage() {
             Login
           </Badge>
         </CardAction>
-        <CardTitle className="text-xl text-slate-800 dark:text-slate-100">
+        <CardTitle className="text-lg text-slate-800 sm:text-xl dark:text-slate-100">
           Entrar
         </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-300">
           Use seu e-mail e sua senha para voltar ao seu espaco com rapidez.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6 px-6 pb-6">
+      <CardContent className="flex flex-col gap-5 px-5 pb-5 sm:gap-6 sm:px-6 sm:pb-6">
         {notice ? (
           <p className="rounded-2xl border border-sky-200/80 bg-sky-50/70 px-4 py-3 text-sm text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">
             {notice}
@@ -93,6 +93,7 @@ export function LoginPage() {
 
           <Button
             type="submit"
+            size="lg"
             className="auth-cta auth-login-cta w-full"
             disabled={!loaderData.configured || isSubmitting}
           >
@@ -100,7 +101,7 @@ export function LoginPage() {
           </Button>
         </Form>
 
-        <div className="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
+        <div className="rounded-[22px] border border-slate-200/80 bg-white/72 px-4 py-4 text-sm text-slate-500 dark:border-slate-700/70 dark:bg-slate-950/45 dark:text-slate-400">
           <span>Ja recebeu um convite?</span>
           <span>
             Abra o link enviado pela pessoa que administra seu espaco. Se
