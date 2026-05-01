@@ -60,7 +60,7 @@ export function InviteActivatePage() {
           </Badge>
           <span>
             {isSignedIn
-              ? `Voce entrou como ${loaderData.sessionEmail}. Agora falta apenas confirmar.`
+              ? `Você entrou como ${loaderData.sessionEmail}. Agora falta apenas confirmar.`
               : "Crie sua conta agora para terminar a entrada sem sair desta tela."}
           </span>
           </div>
@@ -71,7 +71,7 @@ export function InviteActivatePage() {
             <FieldSet>
               <FieldLegend>Confirmar entrada</FieldLegend>
               <FieldDescription>
-                Ao continuar, este convite conecta sua conta ao espaco certo e
+                Ao continuar, este convite conecta sua conta ao espaço certo e
                 libera o acesso.
               </FieldDescription>
             </FieldSet>
@@ -134,7 +134,7 @@ export function InviteActivatePage() {
 
         {!isSignedIn ? (
           <p className="rounded-[22px] border border-slate-200/80 bg-white/72 px-4 py-4 text-sm text-slate-500 dark:border-slate-700/70 dark:bg-slate-950/45 dark:text-slate-400">
-            Ja possui conta? Entre pela <Link className="underline underline-offset-4 hover:text-foreground" to="/login">tela de login</Link> e depois volte a este mesmo convite.
+            Já possui conta? Entre pela <Link className="underline underline-offset-4 hover:text-foreground" to="/login">tela de login</Link> e depois volte a este mesmo convite.
           </p>
         ) : null}
       </CardContent>

@@ -31,30 +31,30 @@ const COPY_BY_INTENT: Record<
 > = {
   invite: {
     description:
-      "Seu convite ja foi aceito. Estamos encaixando sua sessao no espaco correto antes de abrir o painel.",
+      "Seu convite já foi aceito. Estamos encaixando sua sessão no espaço correto antes de abrir o painel.",
     eyebrow: "Convite confirmado",
     progressDescription:
-      "A tela seguinte ja vai abrir com o contexto certo, sem pular por estados intermediarios.",
+      "A tela seguinte já vai abrir com o contexto certo, sem pular por estados intermediários.",
     progressTitle: "Liberando seu acesso",
     title: "Agora estamos concluindo sua entrada.",
   },
   login: {
     description:
-      "Sua autenticacao foi recebida. Estamos confirmando o contexto do seu espaco antes de abrir a area protegida.",
-    eyebrow: "Sessao iniciada",
+      "Sua autenticação foi recebida. Estamos confirmando o contexto do seu espaço antes de abrir a área protegida.",
+    eyebrow: "Sessão iniciada",
     progressDescription:
-      "Assim que o contexto ficar pronto, voce segue direto para o painel.",
+      "Assim que o contexto ficar pronto, você segue direto para o painel.",
     progressTitle: "Preparando seu painel",
-    title: "Sua entrada foi aceita. Falta so um instante.",
+    title: "Sua entrada foi aceita. Falta só um instante.",
   },
   logout: {
     description:
-      "Sua sessao esta sendo encerrada com seguranca antes de devolver voce para a tela de acesso.",
-    eyebrow: "Saida em andamento",
+      "Sua sessão está sendo encerrada com segurança antes de devolver você para a tela de acesso.",
+    eyebrow: "Saída em andamento",
     progressDescription:
       "Estamos limpando seu contexto local para evitar retornos a estados antigos.",
-    progressTitle: "Fechando sua sessao",
-    title: "Estamos encerrando sua sessao agora.",
+    progressTitle: "Fechando sua sessão",
+    title: "Estamos encerrando sua sessão agora.",
   },
 }
 

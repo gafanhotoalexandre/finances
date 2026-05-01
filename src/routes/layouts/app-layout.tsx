@@ -40,7 +40,7 @@ export function AppLayout() {
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
               <span className="max-w-full truncate sm:max-w-none">
-                {session?.user.email ?? "Sessao sem e-mail"}
+                {session?.user.email ?? "Sessão sem e-mail"}
               </span>
               <Separator orientation="vertical" className="hidden h-4 sm:block" />
               <span className="font-mono uppercase">{role ?? "sem role"}</span>

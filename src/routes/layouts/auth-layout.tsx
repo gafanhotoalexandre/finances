@@ -15,13 +15,13 @@ const copyByPath: Record<
     eyebrow: "Acesso ao seu espaco",
     supporting:
       "Entre com calma e retome sua rotina financeira do ponto em que parou.",
-    title: "Um acesso simples, limpo e pronto para levar voce de volta ao caixa.",
+    title: "Um acesso simples, limpo e pronto para levar você de volta ao caixa.",
   },
   "/handoff": {
-    eyebrow: "Transicao segura",
+    eyebrow: "Transição segura",
     supporting:
-      "Estamos confirmando sua sessao e preparando o proximo passo sem te devolver para um estado intermediario.",
-    title: "Seu acesso esta mudando de etapa. Falta so um instante.",
+      "Estamos confirmando sua sessão e preparando o próximo passo sem te devolver para um estado intermediário.",
+    title: "Seu acesso está mudando de etapa. Falta só um instante.",
   },
 }
 
@@ -30,8 +30,8 @@ export function AuthLayout() {
   const copy = copyByPath[location.pathname] ?? {
     eyebrow: "Convite em andamento",
     supporting:
-      "Crie sua conta, confirme os dados e entre no espaco certo sem sair desta tela.",
-    title: "Seu convite ja aponta o caminho. Falta apenas concluir a entrada.",
+      "Crie sua conta, confirme os dados e entre no espaço certo sem sair desta tela.",
+    title: "Seu convite já aponta o caminho. Falta apenas concluir a entrada.",
   }
 
   return (
@@ -88,13 +88,13 @@ export function AuthLayout() {
               <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-800 dark:text-slate-100">
                 Guiado
               </span>
-              <span>Login e convite deixam claro o proximo passo.</span>
+              <span>Login e convite deixam claro o próximo passo.</span>
             </div>
             <div className="glass-card flex flex-col gap-1 rounded-2xl border-white/55 p-4 text-slate-600 dark:border-slate-700/70 dark:bg-slate-950/55 dark:text-slate-300">
               <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-800 dark:text-slate-100">
                 Pronto
               </span>
-              <span>Ao final, seu espaco ja abre no contexto correto.</span>
+              <span>Ao final, seu espaço já abre no contexto correto.</span>
             </div>
           </div>
         </section>

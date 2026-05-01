@@ -15,13 +15,13 @@ export function NotFoundPage() {
     <div className="flex min-h-svh items-center justify-center bg-muted/20 px-6 py-10">
       <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle>Rota nao encontrada</CardTitle>
+          <CardTitle>Rota não encontrada</CardTitle>
           <CardDescription>
-            Este app reconhece login, convite, dashboard e a area administrativa protegida.
+            Este app reconhece login, convite, dashboard e a área administrativa protegida.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Se voce chegou aqui durante o teste, volte para o fluxo principal e valide autenticacao, hidratacao e sign out.
+          Se você chegou aqui durante o teste, volte para o fluxo principal e valide autenticação, hidratação e logout.
         </CardContent>
         <CardFooter>
           <Button asChild>

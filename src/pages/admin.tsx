@@ -99,7 +99,7 @@ const INVITE_SCOPE_OPTIONS: Array<{
     value: "isolated-workspace",
   },
   {
-    description: "Cria um convite para o workspace que voce administra hoje.",
+    description: "Cria um convite para o workspace que você administra hoje.",
     icon: UsersIcon,
     label: "Adicionar ao meu workspace",
     value: "workspace-member",
@@ -174,12 +174,12 @@ export function AdminPage() {
       setCopiedKey(key)
       setCopyFeedback({
         kind: "success",
-        message: "Link completo copiado com o dominio atual.",
+        message: "Link completo copiado com o domínio atual.",
       })
     } catch {
       setCopyFeedback({
         kind: "error",
-        message: "Nao foi possivel copiar o link agora.",
+        message: "Não foi possível copiar o link agora.",
       })
     }
   }
@@ -228,7 +228,7 @@ export function AdminPage() {
                 </div>
                 <p className="max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
                   Crie convites para um novo workspace ou para o seu workspace
-                  atual e acompanhe o historico em um unico lugar.
+                  atual e acompanhe o histórico em um único lugar.
                 </p>
               </div>
             </div>
@@ -318,10 +318,10 @@ export function AdminPage() {
               <div className="flex flex-col gap-1 px-1 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                    Historico de convites
+                    Histórico de convites
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {loaderData.invites.length} registro(s) visivel(is) para
+                    {loaderData.invites.length} registro(s) visível(is) para
                     este admin.
                   </p>
                 </div>
@@ -490,7 +490,7 @@ export function AdminPage() {
 
                           <div className="rounded-2xl border border-slate-200/80 bg-white/72 px-4 py-3 text-xs leading-6 text-slate-500 dark:border-slate-700/70 dark:bg-slate-950/52 dark:text-slate-400">
                             <span className="font-medium text-slate-700 dark:text-slate-200">
-                              URL de ativacao:
+                              URL de ativação:
                             </span>{" "}
                             <span className="font-mono">{buildInviteUrl(invite.code)}</span>
                           </div>
@@ -521,8 +521,8 @@ export function AdminPage() {
             <AlertDialogTitle>Revogar este convite?</AlertDialogTitle>
             <AlertDialogDescription>
               {inviteToRevoke
-                ? `O codigo ${inviteToRevoke.code} sera marcado como revoked e permanecera no historico administrativo. ${describeInviteAudience(inviteToRevoke)} Essa acao encerra o uso operacional do link e nao faz hard delete.`
-                : "Confirme a revogacao deste convite."}
+                ? `O código ${inviteToRevoke.code} será marcado como revogado e permanecerá no histórico administrativo. ${describeInviteAudience(inviteToRevoke)} Essa ação encerra o uso operacional do link e não faz exclusão permanente.`
+                : "Confirme a revogação deste convite."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -540,7 +540,7 @@ export function AdminPage() {
               ) : (
                 <Link2Icon data-icon="inline-start" />
               )}
-              {isRevoking ? "Revogando..." : "Confirmar revogacao"}
+              {isRevoking ? "Revogando..." : "Confirmar revogação"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -596,10 +596,10 @@ function InviteComposerPanel({
           <FieldGroup>
             <FieldSet className="gap-4">
               <div className="flex flex-col gap-1">
-                <FieldLegend>Como esse convite sera usado</FieldLegend>
+                <FieldLegend>Como esse convite será usado</FieldLegend>
                 <FieldDescription>
-                  Escolha como esse convite sera usado. O link sera criado no
-                  dominio atual.
+                  Escolha como esse convite será usado. O link será criado no
+                  domínio atual.
                 </FieldDescription>
               </div>
               <div
@@ -676,7 +676,7 @@ function InviteComposerPanel({
                   value={workspaceName}
                 />
                 <FieldDescription>
-                  Esse nome sera usado na criacao do novo workspace.
+                  Esse nome será usado na criação do novo workspace.
                 </FieldDescription>
                 {isWorkspaceNameInvalid ? (
                   <FieldError>
@@ -714,7 +714,7 @@ function InviteComposerPanel({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-1">
                     <span className="text-[11px] font-medium tracking-[0.16em] uppercase text-indigo-700 dark:text-indigo-200">
-                      Ultimo convite
+                      Último convite
                     </span>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge className="bg-indigo-600 font-mono text-white dark:bg-indigo-500 dark:text-slate-950">
@@ -896,21 +896,21 @@ function countInvitesByVisualStatus(invites: AdminInviteRecord[]) {
 function describeInviteState(invite: AdminInviteRecord) {
   if (invite.status === "revoked") {
     if (invite.claimedBySnapshotShort && invite.claimedAtSnapshot) {
-      return `Revogado em ${formatDateTime(invite.revokedAt)}. Historico preservado: ativado por ${invite.claimedBySnapshotShort} em ${formatDateTime(invite.claimedAtSnapshot)}.`
+      return `Revogado em ${formatDateTime(invite.revokedAt)}. Histórico preservado: ativado por ${invite.claimedBySnapshotShort} em ${formatDateTime(invite.claimedAtSnapshot)}.`
     }
 
-    return `Revogado em ${formatDateTime(invite.revokedAt)} antes de qualquer ativacao.`
+    return `Revogado em ${formatDateTime(invite.revokedAt)} antes de qualquer ativação.`
   }
 
   if (invite.visualStatus === "used") {
-    return `Ativado por ${invite.claimedByShort ?? "identificador indisponivel"} em ${formatDateTime(invite.claimedAt ?? invite.claimedAtSnapshot)}.`
+    return `Ativado por ${invite.claimedByShort ?? "identificador indisponível"} em ${formatDateTime(invite.claimedAt ?? invite.claimedAtSnapshot)}.`
   }
 
   if (invite.visualStatus === "expired") {
-    return `Prazo encerrado em ${formatDateTime(invite.expiresAt)}. A leitura visual marca este convite como expirado, mesmo que o banco ainda o mantenha pending ate nova acao operacional.`
+    return `Prazo encerrado em ${formatDateTime(invite.expiresAt)}. A leitura visual marca este convite como expirado, mesmo que o banco ainda o mantenha pending até nova ação operacional.`
   }
 
-  return `Aguardando ativacao. O link continua valido ate ${formatDateTime(invite.expiresAt)}.`
+  return `Aguardando ativação. O link continua válido até ${formatDateTime(invite.expiresAt)}.`
 }
 
 function getInviteActivationLabel(invite: AdminInviteRecord) {
@@ -923,15 +923,15 @@ function getInviteActivationLabel(invite: AdminInviteRecord) {
   }
 
   if (invite.visualStatus === "pending") {
-    return "aguardando ativacao"
+    return "aguardando ativação"
   }
 
-  return "nao ativado"
+  return "não ativado"
 }
 
 function formatDate(value: string | null) {
   if (!value) {
-    return "data indisponivel"
+    return "data indisponível"
   }
 
   return DATE_FORMATTER.format(new Date(value))
@@ -939,7 +939,7 @@ function formatDate(value: string | null) {
 
 function formatDateTime(value: string | null) {
   if (!value) {
-    return "data indisponivel"
+    return "data indisponível"
   }
 
   return DATE_TIME_FORMATTER.format(new Date(value))

@@ -1,13 +1,13 @@
 # Project Finance
 
-Project Finance e um app de fluxo de caixa pessoal com login simples, convites por workspace e dashboard mensal real. A stack prioriza velocidade de iteracao no frontend e regras de acesso fortes no banco, sem Edge Functions e sem camadas desnecessarias.
+Project Finance é um app de fluxo de caixa pessoal com login simples, convites por workspace e dashboard mensal real. A stack prioriza velocidade de iteração no frontend e regras de acesso fortes no banco, sem Edge Functions e sem camadas desnecessárias.
 
 ## Estado atual
 
-- v0.2.4 validada: sessao blindada entre Supabase, Zustand e React Router com a rota `/handoff`.
-- shell de auth refinada: linguagem mais humana, superficie mais limpa e fluxo sem estados intermediarios falsos.
-- v0.2 encerrada: rota `/admin` com emissao, revogacao e historico administrativo de convites.
-- v0.3.1 em foco: meios de pagamento no Dashboard com discriminacao visual, filtro local e cadastro no proprio lancamento.
+- v0.2.4 validada: sessão blindada entre Supabase, Zustand e React Router com a rota `/handoff`.
+- shell de auth refinada: linguagem mais humana, superfície mais limpa e fluxo sem estados intermediários falsos.
+- v0.2 encerrada: rota `/admin` com emissão, revogação e histórico administrativo de convites.
+- v0.3.1 em foco: meios de pagamento no Dashboard com discriminação visual, filtro local e cadastro no próprio lançamento.
 
 ## Stack
 
@@ -28,95 +28,94 @@ Project Finance e um app de fluxo de caixa pessoal com login simples, convites p
 - `/dashboard`
 - `/admin`
 
-## Principios da arquitetura
+## Princípios da arquitetura
 
 - Isolamento rigoroso por `workspace_id`.
 - Regras de acesso centralizadas no Postgres via RLS, triggers e RPCs.
 - Estado global restrito a `session`, `role` e `workspaceId`.
 - Fluxo de convite concentrado na RPC `public.claim_invite(text)`.
-- Competencia e data corrente baseadas em `America/Sao_Paulo` para evitar drift entre navegacao e labels.
+- Competência e data corrente baseadas em `America/Sao_Paulo` para evitar drift entre navegação e labels.
 
 ## Ambiente
 
-O frontend usa apenas as variaveis nativas do Vite:
-
+O frontend usa apenas as variáveis nativas do Vite:
 ```bash
-VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_URL=[https://your-project-ref.supabase.co](https://your-project-ref.supabase.co)
 VITE_SUPABASE_ANON_KEY=your-publishable-anon-key
 ```
 
 Arquivos relacionados:
 
 - `.env.example`: placeholders versionados.
-- `.env`: configuracao local ignorada pelo git.
+- `.env`: configuração local ignorada pelo git.
 
 ## Rodando localmente
 
 1. Rode `npm install`.
 2. Crie o `.env` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` reais.
-3. Aplique as migrations em `supabase/migrations/` no projeto Supabase, incluindo foundation, snapshots de historico e ajuste de RLS para convites isolados.
-4. Confirme que `Confirm email` esta desativado em `Authentication`.
+3. Aplique as migrations em `supabase/migrations/` no projeto Supabase, incluindo foundation, snapshots de histórico e ajuste de RLS para convites isolados.
+4. Confirme que `Confirm email` está desativado em `Authentication`.
 5. Rode `npm run dev`.
 
-## Validacao rapida da v0.3.0
+## Validação rápida da v0.3.0
 
-1. Entre em `/dashboard` com um workspace que tenha transacoes em meses anteriores e no mes atual.
-2. Confirme que `Saldo Anterior` mostra a soma acumulada de todas as transacoes antes do primeiro dia do mes visualizado.
-3. Confirme que `Entradas` e `Saidas` mostram apenas os movimentos do mes aberto na URL.
-4. Confirme que `Caixa Atual` e igual a `Saldo Anterior + Entradas - Saidas`.
-5. Navegue entre meses com e sem movimentos e valide que o card destacado continua contando a historia cronologica correta.
-6. Confirme que a lista `Lancamentos do mes` continua exibindo apenas as transacoes da competencia selecionada.
+1. Entre em `/dashboard` com um workspace que tenha transações em meses anteriores e no mês atual.
+2. Confirme que `Saldo Anterior` mostra a soma acumulada de todas as transações antes do primeiro dia do mês visualizado.
+3. Confirme que `Entradas` e `Saidas` mostram apenas os movimentos do mês aberto na URL.
+4. Confirme que `Caixa Atual` é igual a `Saldo Anterior + Entradas - Saidas`.
+5. Navegue entre meses com e sem movimentos e valide que o card destacado continua contando a história cronológica correta.
+6. Confirme que a lista `Lancamentos do mes` continua exibindo apenas as transações da competência selecionada.
 
-## Validacao rapida da v0.3.1
+## Validação rápida da v0.3.1
 
 1. Aplique a nova migration de `payment_method` em `supabase/migrations/20260430120000_transactions_payment_method.sql`.
-2. Entre em `/dashboard` e crie ao menos um lancamento em cada meio de pagamento: `credit_card`, `debit`, `pix` e `cash`.
-3. Confirme que a listagem mensal mostra um badge visual para o meio de pagamento sem alterar a ordem nem a leitura do lancamento.
-4. Use o filtro `Todos os meios` e troque para um metodo especifico, confirmando que o recorte acontece apenas na lista do mes aberto.
-5. Crie um lancamento com repeticao maior que `1` e confirme que todas as parcelas futuras herdam o mesmo `payment_method`.
-6. Revalide que `Saldo Anterior`, `Entradas`, `Saidas` e `Caixa Atual` continuam com a mesma matematica cronologica de v0.3.0.
+2. Entre em `/dashboard` e crie ao menos um lançamento em cada meio de pagamento: `credit_card`, `debit`, `pix` e `cash`.
+3. Confirme que a listagem mensal mostra um badge visual para o meio de pagamento sem alterar a ordem nem a leitura do lançamento.
+4. Use o filtro `Todos os meios` e troque para um método específico, confirmando que o recorte acontece apenas na lista do mês aberto.
+5. Crie um lançamento com repetição maior que `1` e confirme que todas as parcelas futuras herdam o mesmo `payment_method`.
+6. Revalide que `Saldo Anterior`, `Entradas`, `Saidas` e `Caixa Atual` continuam com a mesma matemática cronológica de v0.3.0.
 
-## Validacao rapida da v0.2.5
+## Validação rápida da v0.2.5
 
-1. Abra `/login` e confirme que, no celular, o formulario aparece antes do bloco institucional.
-2. Abra `/invite/:code` e confirme a mesma prioridade: acao primeiro, apoio depois.
-3. Entre em `/admin` no celular e confirme que o bloco `Criar convite` aparece antes das metricas e do historico.
-4. Gere um convite e valide que o historico mobile mostra cards sanfonados com status e destino no estado fechado.
-5. Expanda um convite no mobile e confirme validade, identificador de ativacao e acao de `Revogar`.
-6. Confirme contraste de inputs e botoes no Dark Mode em `/login`, `/invite/:code` e `/admin`.
+1. Abra `/login` e confirme que, no celular, o formulário aparece antes do bloco institucional.
+2. Abra `/invite/:code` e confirme a mesma prioridade: ação primeiro, apoio depois.
+3. Entre em `/admin` no celular e confirme que o bloco `Criar convite` aparece antes das métricas e do histórico.
+4. Gere um convite e valide que o histórico mobile mostra cards sanfonados com status e destino no estado fechado.
+5. Expanda um convite no mobile e confirme validade, identificador de ativação e ação de `Revogar`.
+6. Confirme contraste de inputs e botões no Dark Mode em `/login`, `/invite/:code` e `/admin`.
 
-## Validacao rapida da v0.2.1
+## Validação rápida da v0.2.1
 
 1. Entre em `/admin` com uma conta `admin`.
-2. Gere um convite em `Novo Workspace Isolado` informando um nome valido.
+2. Gere um convite em `Novo Workspace Isolado` informando um nome válido.
 3. Gere um convite em `Membro do meu espaco`.
-4. Confirme que ambos aparecem no historico com tipo e role coerentes.
-5. Revogue um convite isolado ainda `pending` e confirme que ele permanece no historico.
-6. Ative um convite isolado com conta nova e confirme a criacao do workspace com o nome informado.
+4. Confirme que ambos aparecem no histórico com tipo e role coerentes.
+5. Revogue um convite isolado ainda `pending` e confirme que ele permanece no histórico.
+6. Ative um convite isolado com conta nova e confirme a criação do workspace com o nome informado.
 
-## Validacao rapida da v0.1
+## Validação rápida da v0.1
 
 1. Entre em `/login` com uma conta existente.
 2. Teste `/invite/:code` com uma conta nova.
-3. Teste `/invite/:code` ja autenticado.
+3. Teste `/invite/:code` já autenticado.
 4. Confirme o redirecionamento final para `/dashboard`.
-5. Confirme que `Sair` limpa a sessao.
+5. Confirme que `Sair` limpa a sessão.
 
-## O que a migracao foundation cria
+## O que a migração foundation cria
 
-O arquivo `20260426130000_fase0_foundation.sql` recria a base inicial do dominio com:
+O arquivo `20260426130000_fase0_foundation.sql` recria a base inicial do domínio com:
 
 - tipos `app_role`, `category_scope`, `transaction_type` e `invite_status`
 - tabelas `workspaces`, `user_roles`, `categories`, `transactions` e `invites`
-- schema privado `app_private` para helpers sensiveis
+- schema privado `app_private` para helpers sensíveis
 - RLS habilitada nas tabelas expostas em `public`
 - RPC `public.claim_invite(text)`
-- bootstrap do primeiro vinculo do workspace como `admin`
-- seed automatica de categorias padrao
+- bootstrap do primeiro vínculo do workspace como `admin`
+- seed automática de categorias padrão
 
-Importante: essa migracao e destrutiva para os dados dessas tabelas. Use em ambiente de desenvolvimento ou em um projeto ainda vazio.
+Importante: essa migração é destrutiva para os dados dessas tabelas. Use em ambiente de desenvolvimento ou em um projeto ainda vazio.
 
-## Scripts uteis
+## Scripts úteis
 
 - `npm run dev`
 - `npm run typecheck`
@@ -128,17 +127,17 @@ Importante: essa migracao e destrutiva para os dados dessas tabelas. Use em ambi
 ### v0.2
 
 - rota `/admin`
-- rota `/handoff` para transicao segura entre login, convite e logout
-- criacao de convites com codigo no formato `FIN-AAAA-XXXX`
-- opcao entre membro do workspace atual e novo workspace isolado
-- revogacao com historico preservado
-- fluxo completo admin -> convite -> ativacao -> dashboard
-- reestruturacao mobile-first em `/admin`, `/login` e `/invite/:code`
+- rota `/handoff` para transição segura entre login, convite e logout
+- criação de convites com código no formato `FIN-AAAA-XXXX`
+- opção entre membro do workspace atual e novo workspace isolado
+- revogação com histórico preservado
+- fluxo completo admin -> convite -> ativação -> dashboard
+- reestruturação mobile-first em `/admin`, `/login` e `/invite/:code`
 
 ### v0.3
 
-- discriminacao de `payment_method` com `credit_card`, `debit`, `pix` e `cash`
+- discriminação de `payment_method` com `credit_card`, `debit`, `pix` e `cash`
 - filtro local por meio de pagamento na lista do dashboard
-- saldo anterior acumulado antes da competencia aberta
-- caixa atual calculado a partir do historico + movimentos do mes
-- ampliar operacoes e acompanhamento do caixa
+- saldo anterior acumulado antes da competência aberta
+- caixa atual calculado a partir do histórico + movimentos do mês
+- ampliar operações e acompanhamento do caixa

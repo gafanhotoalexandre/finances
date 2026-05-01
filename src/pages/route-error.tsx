@@ -19,7 +19,7 @@ function getRouteErrorMessage(error: unknown) {
     return error.message
   }
 
-  return "Erro inesperado durante a navegacao."
+  return "Erro inesperado durante a navegação."
 }
 
 export function RouteErrorPage() {
@@ -31,7 +31,7 @@ export function RouteErrorPage() {
         <CardHeader>
           <CardTitle>Falha de roteamento</CardTitle>
           <CardDescription>
-            O React Router interceptou um erro antes de concluir a navegacao.
+            O React Router interceptou um erro antes de concluir a navegação.
           </CardDescription>
         </CardHeader>
         <CardContent className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 font-mono text-xs text-muted-foreground">

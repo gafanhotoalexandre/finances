@@ -110,6 +110,7 @@ const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", {
 const OCCURRED_ON_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "short",
+  timeZone: "UTC",
 })
 
 const TRANSACTION_TYPE_COPY: Record<
@@ -143,8 +144,8 @@ const PAYMENT_METHOD_COPY: Record<
   credit_card: {
     badgeClassName:
       "border-amber-200/80 bg-amber-50/85 text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200",
-    label: "Cartao de Credito",
-    shortLabel: "Credito",
+    label: "Cartão de Crédito",
+    shortLabel: "Crédito",
   },
   debit: {
     badgeClassName:
@@ -255,7 +256,7 @@ export function DashboardPage() {
       setFormError(
         getFriendlyErrorMessage(
           error,
-          "Revise descricao, valor, categoria, data e repeticao antes de salvar."
+          "Revise descrição, valor, categoria, data e repetição antes de salvar."
         )
       )
       return
@@ -278,7 +279,7 @@ export function DashboardPage() {
       setFormError(
         getFriendlyErrorMessage(
           error,
-          "Nao foi possivel salvar as transacoes agora."
+          "Não foi possível salvar as transações agora."
         )
       )
     } finally {
@@ -302,7 +303,7 @@ export function DashboardPage() {
       await deleteTransaction(transactionToDelete.id)
       setFeedback({
         kind: "success",
-        message: "Lancamento removido permanentemente.",
+        message: "Lançamento removido permanentemente.",
       })
       setTransactionToDelete(null)
       revalidator.revalidate()
@@ -311,7 +312,7 @@ export function DashboardPage() {
         kind: "error",
         message: getFriendlyErrorMessage(
           error,
-          "Nao foi possivel excluir o lancamento agora."
+          "Não foi possível excluir o lançamento agora."
         ),
       })
     } finally {
@@ -1028,7 +1029,7 @@ function buildRecurringTransactions(
   const repeatMonths = Math.max(1, Number.parseInt(formState.repeatMonths, 10) || 1)
 
   if (description.length < 3) {
-    throw new Error("A descricao precisa ter pelo menos 3 caracteres.")
+    throw new Error("A descrição precisa ter pelo menos 3 caracteres.")
   }
 
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -1040,7 +1041,7 @@ function buildRecurringTransactions(
   }
 
   if (!formState.occurredOn) {
-    throw new Error("Informe a data do lancamento.")
+    throw new Error("Informe a data do lançamento.")
   }
 
   const recurrenceGroupId = repeatMonths > 1 ? crypto.randomUUID() : null

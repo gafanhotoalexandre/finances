@@ -27,7 +27,7 @@ type ClaimInviteRow = {
 }
 
 export const SUPABASE_CONFIGURATION_MESSAGE =
-  "As chaves do Supabase ainda nao foram configuradas. Preencha VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para liberar login e convite."
+  "As chaves do Supabase ainda não foram configuradas. Preencha VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para liberar login e convite."
 
 function createEmptyAuthSnapshot() {
   return {
@@ -38,17 +38,17 @@ function createEmptyAuthSnapshot() {
 }
 
 const friendlyErrors: Record<string, string> = {
-  AUTHENTICATION_REQUIRED: "Voce precisa estar autenticado para continuar.",
-  INVITE_ALREADY_USED: "Esse convite ja foi utilizado.",
-  INVITE_CODE_REQUIRED: "Informe um codigo de convite valido.",
+  AUTHENTICATION_REQUIRED: "Você precisa estar autenticado para continuar.",
+  INVITE_ALREADY_USED: "Esse convite já foi utilizado.",
+  INVITE_CODE_REQUIRED: "Informe um código de convite válido.",
   INVITE_EXPIRED: "Esse convite expirou.",
-  INVITE_NOT_FOUND: "Convite nao encontrado.",
-  INVITE_NOT_PENDING: "Esse convite nao esta mais disponivel.",
+  INVITE_NOT_FOUND: "Convite não encontrado.",
+  INVITE_NOT_PENDING: "Esse convite não está mais disponível.",
   INVITE_REVOKED: "Esse convite foi revogado.",
-  INVITE_WORKSPACE_NOT_FOUND: "O workspace desse convite nao foi encontrado.",
+  INVITE_WORKSPACE_NOT_FOUND: "O workspace desse convite não foi encontrado.",
   SUPABASE_ENV_MISSING: SUPABASE_CONFIGURATION_MESSAGE,
   USER_ALREADY_LINKED_TO_WORKSPACE:
-    "Sua conta ja esta vinculada a um workspace.",
+    "Sua conta já está vinculada a um workspace.",
 }
 
 function getErrorMessage(error: unknown) {
@@ -72,7 +72,7 @@ function getErrorMessage(error: unknown) {
 
 export function getFriendlyErrorMessage(
   error: unknown,
-  fallback = "Nao foi possivel concluir a operacao."
+  fallback = "Não foi possível concluir a operação."
 ) {
   const message = getErrorMessage(error)
 
@@ -82,15 +82,15 @@ export function getFriendlyErrorMessage(
 
   const normalizedMessage = message.toLowerCase()
   if (normalizedMessage.includes("invalid login credentials")) {
-    return "E-mail ou senha invalidos."
+    return "E-mail ou senha inválidos."
   }
 
   if (normalizedMessage.includes("user already registered")) {
-    return "Essa conta ja existe. Entre e reabra o convite para continuar."
+    return "Essa conta já existe. Entre e reabra o convite para continuar."
   }
 
   if (normalizedMessage.includes("email not confirmed")) {
-    return "Para este fluxo funcionar de ponta a ponta, a confirmacao de e-mail precisa estar desativada no projeto Supabase."
+    return "Para este fluxo funcionar de ponta a ponta, a confirmação de e-mail precisa estar desativada no projeto Supabase."
   }
 
   return fallback

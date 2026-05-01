@@ -154,11 +154,11 @@ const MIN_WORKSPACE_NAME_LENGTH = 3
 const MAX_WORKSPACE_NAME_LENGTH = 80
 
 const adminFriendlyErrors: Record<string, string> = {
-  INVALID_ADMIN_INTENT: "A acao administrativa enviada nao foi reconhecida.",
+  INVALID_ADMIN_INTENT: "A ação administrativa enviada não foi reconhecida.",
   INVALID_INVITE_SCOPE: "Escolha o tipo de convite antes de continuar.",
   INVITE_CODE_GENERATION_FAILED:
-    "Nao foi possivel reservar um codigo unico depois de varias tentativas. Tente novamente.",
-  INVITE_ID_REQUIRED: "Escolha um convite valido antes de revogar.",
+    "Não foi possível reservar um código único depois de várias tentativas. Tente novamente.",
+  INVITE_ID_REQUIRED: "Escolha um convite válido antes de revogar.",
   INVITE_REVOKE_ONLY_PENDING: "Apenas convites pendentes podem ser revogados.",
   WORKSPACE_NAME_LENGTH_INVALID:
     "O nome do novo workspace deve ter entre 3 e 80 caracteres.",
@@ -219,7 +219,7 @@ export async function loginLoader({ request }: LoaderFunctionArgs) {
     hasWorkspaceContext: Boolean(snapshot.workspaceId),
     info:
       redirectedForInvite || (snapshot.session && !snapshot.workspaceId)
-        ? "Voce ja entrou, mas sua conta ainda nao foi ligada a um espaco. Abra seu convite para continuar."
+        ? "Você já entrou, mas sua conta ainda não foi ligada a um espaço. Abra seu convite para continuar."
         : null,
   } satisfies LoginLoaderData
 }
@@ -311,7 +311,7 @@ export async function loginAction({ request }: ActionFunctionArgs) {
 
   if (error) {
     return {
-      error: getFriendlyErrorMessage(error, "Nao foi possivel entrar agora."),
+      error: getFriendlyErrorMessage(error, "Não foi possível entrar agora."),
       info: null,
     } satisfies LoginActionData
   }
@@ -321,7 +321,7 @@ export async function loginAction({ request }: ActionFunctionArgs) {
   if (!session) {
     return {
       error:
-        "A entrada foi aceita, mas a sessao ainda nao ficou pronta. Tente novamente em instantes.",
+        "A entrada foi aceita, mas a sessão ainda não ficou pronta. Tente novamente em instantes.",
       info: null,
     } satisfies LoginActionData
   }
@@ -334,7 +334,7 @@ export async function loginAction({ request }: ActionFunctionArgs) {
   return {
     error: null,
     info:
-      "Entrada concluida. Agora falta apenas abrir seu convite para liberar o acesso ao espaco.",
+      "Entrada concluída. Agora falta apenas abrir seu convite para liberar o acesso ao espaço.",
   } satisfies LoginActionData
 }
 
@@ -342,7 +342,7 @@ export async function inviteAction({ params, request }: ActionFunctionArgs) {
   const code = params.code?.trim()
   if (!code) {
     return {
-      error: "Convite invalido.",
+      error: "Convite inválido.",
       info: null,
     } satisfies InviteActionData
   }
@@ -375,7 +375,7 @@ export async function inviteAction({ params, request }: ActionFunctionArgs) {
 
     if (error) {
       return {
-        error: getFriendlyErrorMessage(error, "Nao foi possivel criar a conta agora."),
+        error: getFriendlyErrorMessage(error, "Não foi possível criar a conta agora."),
         info: null,
       } satisfies InviteActionData
     }
@@ -383,7 +383,7 @@ export async function inviteAction({ params, request }: ActionFunctionArgs) {
     if (!data.session) {
       return {
         error:
-          "A conta foi criada, mas a entrada nao ficou pronta logo em seguida. Confira se a confirmacao de e-mail esta desativada no Supabase para este fluxo.",
+          "A conta foi criada, mas a entrada não ficou pronta logo em seguida. Confira se a confirmação de e-mail está desativada no Supabase para este fluxo.",
         info: null,
       } satisfies InviteActionData
     }
@@ -395,7 +395,7 @@ export async function inviteAction({ params, request }: ActionFunctionArgs) {
     return {
       error: getFriendlyErrorMessage(
         error,
-        "Nao foi possivel ativar o convite agora."
+        "Não foi possível ativar o convite agora."
       ),
       info: null,
     } satisfies InviteActionData
@@ -413,7 +413,7 @@ export async function adminAction({ request }: ActionFunctionArgs) {
     return createAdminActionResponse({
       error: getAdminErrorMessage(
         new Error("INVALID_ADMIN_INTENT"),
-        "Nao foi possivel entender a acao administrativa enviada."
+        "Não foi possível entender a ação administrativa enviada."
       ),
     })
   }
@@ -432,7 +432,7 @@ export async function signOutAction() {
     return {
       error: getFriendlyErrorMessage(
         error,
-        "Nao foi possivel encerrar a sessao agora."
+        "Não foi possível encerrar a sessão agora."
       ),
     }
   }
@@ -457,7 +457,7 @@ async function handleCreateInviteAction(
     return createAdminActionResponse({
       error: getAdminErrorMessage(
         error,
-        "Nao foi possivel gerar um novo convite agora."
+        "Não foi possível gerar um novo convite agora."
       ),
       intent: "create-invite",
     })
@@ -471,7 +471,7 @@ async function handleRevokeInviteAction(formData: FormData) {
     return createAdminActionResponse({
       error: getAdminErrorMessage(
         new Error("INVITE_ID_REQUIRED"),
-        "Escolha um convite valido antes de revogar."
+        "Escolha um convite válido antes de revogar."
       ),
       intent: "revoke-invite",
     })
@@ -481,7 +481,7 @@ async function handleRevokeInviteAction(formData: FormData) {
     await revokeAdminInvite(inviteId)
 
     return createAdminActionResponse({
-      info: "Convite revogado e mantido no historico administrativo.",
+      info: "Convite revogado e mantido no histórico administrativo.",
       intent: "revoke-invite",
       revokedInviteId: inviteId,
     })
@@ -489,7 +489,7 @@ async function handleRevokeInviteAction(formData: FormData) {
     return createAdminActionResponse({
       error: getAdminErrorMessage(
         error,
-        "Nao foi possivel revogar o convite agora."
+        "Não foi possível revogar o convite agora."
       ),
       intent: "revoke-invite",
       revokedInviteId: inviteId,
