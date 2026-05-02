@@ -31,7 +31,7 @@ const COPY_BY_INTENT: Record<
 > = {
   invite: {
     description:
-      "Seu convite já foi aceito. Estamos encaixando sua sessão no espaço correto antes de abrir o painel.",
+      "Seu convite já foi aceito. Estamos encaixando sua sessão no workspace correto antes de abrir o painel.",
     eyebrow: "Convite confirmado",
     progressDescription:
       "A tela seguinte já vai abrir com o contexto certo, sem pular por estados intermediários.",
@@ -40,7 +40,7 @@ const COPY_BY_INTENT: Record<
   },
   login: {
     description:
-      "Sua autenticação foi recebida. Estamos confirmando o contexto do seu espaço antes de abrir a área protegida.",
+      "Sua autenticação foi recebida. Estamos confirmando o contexto do seu workspace antes de abrir a área protegida.",
     eyebrow: "Sessão iniciada",
     progressDescription:
       "Assim que o contexto ficar pronto, você segue direto para o painel.",

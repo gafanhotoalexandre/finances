@@ -45,7 +45,7 @@ export function LoginPage() {
           Entrar
         </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-300">
-          Use seu e-mail e sua senha para voltar ao seu espaço com rapidez.
+          Use seu e-mail e sua senha para voltar ao seu workspace com rapidez.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5 px-5 pb-5 sm:gap-6 sm:px-6 sm:pb-6">
@@ -59,7 +59,7 @@ export function LoginPage() {
           <FieldSet>
             <FieldLegend>Seus dados</FieldLegend>
             <FieldDescription>
-              Se sua conta ainda não estiver ligada a um espaço, tudo bem.
+              Se sua conta ainda não estiver ligada a um workspace, tudo bem.
               Depois do login, basta abrir um convite para concluir a entrada.
             </FieldDescription>
             <FieldGroup>
@@ -104,7 +104,7 @@ export function LoginPage() {
         <div className="rounded-[22px] border border-slate-200/80 bg-white/72 px-4 py-4 text-sm text-slate-500 dark:border-slate-700/70 dark:bg-slate-950/45 dark:text-slate-400">
           <span className="block">Já recebeu um convite?</span>
           <span>
-            Abra o link enviado pela pessoa que administra seu espaço. Se
+            Abra o link enviado pela pessoa que administra seu workspace. Se
             quiser recomeçar do início, volte para a <Link className="underline underline-offset-4 hover:text-foreground" to="/">página inicial</Link>.
           </span>
         </div>

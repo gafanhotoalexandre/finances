@@ -45,8 +45,8 @@ export function InviteActivatePage() {
           Entrar com convite
         </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-300">
-          Use este codigo para criar sua conta ou liberar o acesso ao seu
-          espaco no mesmo fluxo.
+          Use este código para criar sua conta ou liberar o acesso ao seu
+          workspace no mesmo fluxo.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5 px-5 pb-5 sm:gap-6 sm:px-6 sm:pb-6">
@@ -71,7 +71,7 @@ export function InviteActivatePage() {
             <FieldSet>
               <FieldLegend>Confirmar entrada</FieldLegend>
               <FieldDescription>
-                Ao continuar, este convite conecta sua conta ao espaço certo e
+                Ao continuar, este convite conecta sua conta ao workspace certo e
                 libera o acesso.
               </FieldDescription>
             </FieldSet>

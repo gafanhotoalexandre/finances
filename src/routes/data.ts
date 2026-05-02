@@ -219,7 +219,7 @@ export async function loginLoader({ request }: LoaderFunctionArgs) {
     hasWorkspaceContext: Boolean(snapshot.workspaceId),
     info:
       redirectedForInvite || (snapshot.session && !snapshot.workspaceId)
-        ? "Você já entrou, mas sua conta ainda não foi ligada a um espaço. Abra seu convite para continuar."
+        ? "Você já entrou, mas sua conta ainda não foi ligada a um workspace. Abra seu convite para continuar."
         : null,
   } satisfies LoginLoaderData
 }
@@ -334,7 +334,7 @@ export async function loginAction({ request }: ActionFunctionArgs) {
   return {
     error: null,
     info:
-      "Entrada concluída. Agora falta apenas abrir seu convite para liberar o acesso ao espaço.",
+      "Entrada concluída. Agora falta apenas abrir seu convite para liberar o acesso ao workspace.",
   } satisfies LoginActionData
 }
 
@@ -776,7 +776,7 @@ function getInviteScopeFromWorkspaceId(
 
 function getCreateInviteSuccessMessage(createdInvite: AdminCreatedInvite) {
   if (createdInvite.scope === "isolated-workspace") {
-    return `Convite para o novo workspace isolado ${createdInvite.workspaceName ?? "sem nome"} gerado. Copie o link completo e envie para iniciar esse espaco.`
+    return `Convite para o novo workspace isolado ${createdInvite.workspaceName ?? "sem nome"} gerado. Copie o link completo e envie para iniciar esse espaço.`
   }
 
   return "Convite de membro do seu workspace gerado. Copie o link completo e envie para a pessoa certa."

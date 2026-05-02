@@ -12,7 +12,7 @@ const copyByPath: Record<
   }
 > = {
   "/login": {
-    eyebrow: "Acesso ao seu espaco",
+    eyebrow: "Acesso ao seu workspace",
     supporting:
       "Entre com calma e retome sua rotina financeira do ponto em que parou.",
     title: "Um acesso simples, limpo e pronto para levar você de volta ao caixa.",
@@ -30,7 +30,7 @@ export function AuthLayout() {
   const copy = copyByPath[location.pathname] ?? {
     eyebrow: "Convite em andamento",
     supporting:
-      "Crie sua conta, confirme os dados e entre no espaço certo sem sair desta tela.",
+      "Crie sua conta, confirme os dados e entre no workspace certo sem sair desta tela.",
     title: "Seu convite já aponta o caminho. Falta apenas concluir a entrada.",
   }
 
@@ -94,7 +94,7 @@ export function AuthLayout() {
               <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-800 dark:text-slate-100">
                 Pronto
               </span>
-              <span>Ao final, seu espaço já abre no contexto correto.</span>
+              <span>Ao final, seu workspace já abre no contexto correto.</span>
             </div>
           </div>
         </section>
