@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 
 import { getFriendlyErrorMessage } from "@/lib/auth"
+import { APP_VERSION } from "@/lib/app-meta"
 import {
   allocateToReserve,
   createReserve,
@@ -33,6 +34,7 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
+  DrawerTrigger,
 } from "@/components/ui/drawer"
 import {
   Field,
@@ -93,6 +95,7 @@ export function ReservesPage() {
   const [allocationFormState, setAllocationFormState] = React.useState(
     createReserveAllocationFormState
   )
+  const [composerDrawerOpen, setComposerDrawerOpen] = React.useState(false)
   const [selectedReserveId, setSelectedReserveId] = React.useState<string | null>(
     null
   )
@@ -197,6 +200,7 @@ export function ReservesPage() {
         message: `Caixinha "${reserveName}" criada com sucesso.`,
       })
       setCreateFormState(createReserveFormState())
+      setComposerDrawerOpen(false)
       React.startTransition(() => {
         revalidator.revalidate()
       })
@@ -271,7 +275,7 @@ export function ReservesPage() {
                     variant="outline"
                     className="glass-card border-white/65 bg-white/72 text-[11px] tracking-[0.18em] uppercase text-slate-700 dark:border-slate-700/70 dark:bg-slate-950/60 dark:text-slate-200"
                   >
-                    v0.4.0
+                    v{APP_VERSION}
                   </Badge>
                 </div>
                 <p className="max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -281,23 +285,33 @@ export function ReservesPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-              {isRevalidating ? (
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                {isRevalidating ? (
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-slate-200/80 bg-white/78 dark:border-slate-700/80 dark:bg-slate-950/62"
+                  >
+                    <LoaderCircleIcon className="animate-spin" />
+                    Sincronizando
+                  </Badge>
+                ) : null}
                 <Badge
                   variant="outline"
-                  className="gap-1 border-slate-200/80 bg-white/78 dark:border-slate-700/80 dark:bg-slate-950/62"
+                  className="glass-card border-white/60 bg-white/65 uppercase dark:border-slate-700/70 dark:bg-slate-950/55"
                 >
-                  <LoaderCircleIcon className="animate-spin" />
-                  Sincronizando
+                  {loaderData.reserves.length} caixinha
+                  {loaderData.reserves.length === 1 ? "" : "s"}
                 </Badge>
-              ) : null}
-              <Badge
-                variant="outline"
-                className="glass-card border-white/60 bg-white/65 uppercase dark:border-slate-700/70 dark:bg-slate-950/55"
+              </div>
+              <Button
+                type="button"
+                className="dashboard-cta w-full lg:hidden sm:w-auto"
+                onClick={() => setComposerDrawerOpen(true)}
               >
-                {loaderData.reserves.length} caixinha
-                {loaderData.reserves.length === 1 ? "" : "s"}
-              </Badge>
+                <PlusIcon data-icon="inline-start" />
+                Nova caixinha
+              </Button>
             </div>
           </header>
 
@@ -314,7 +328,7 @@ export function ReservesPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 md:gap-4">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 md:gap-4">
             <ReserveMetricCard
               accent="slate"
               helper="Total consolidado hoje em todas as caixinhas."
@@ -358,7 +372,7 @@ export function ReservesPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_360px] lg:gap-8">
-            <section className="order-2 flex min-w-0 flex-col gap-3 lg:order-1">
+            <section className="order-1 flex min-w-0 flex-col gap-3">
               <div className="flex items-center justify-between gap-3 px-1">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -391,6 +405,14 @@ export function ReservesPage() {
                       fluxo acontece dentro do botão <span className="font-medium">Guardar dinheiro</span>
                       de cada card.
                     </div>
+                    <Button
+                      type="button"
+                      className="dashboard-cta mt-4 w-full lg:hidden"
+                      onClick={() => setComposerDrawerOpen(true)}
+                    >
+                      <PlusIcon data-icon="inline-start" />
+                      Criar primeira reserva
+                    </Button>
                   </CardContent>
                 </Card>
               ) : (
@@ -407,76 +429,46 @@ export function ReservesPage() {
               )}
             </section>
 
-            <aside className="order-1 lg:order-2">
+            <aside className="order-2 hidden lg:block">
               <div className="glass-card rounded-[24px] border-white/55 p-5 dark:border-slate-700/70 dark:bg-slate-950/55 lg:sticky lg:top-6">
-                <form className="flex flex-col gap-5" onSubmit={handleCreateReserve}>
-                  <div className="flex flex-col gap-2">
-                    <span className="font-mono text-[10px] font-medium tracking-[0.22em] uppercase text-slate-500 dark:text-slate-400">
-                      Nova reserva
-                    </span>
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-semibold tracking-tight text-slate-800 dark:text-slate-50">
-                        Criar nova caixinha
-                      </h3>
-                      <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                        Nome obrigatório, meta opcional. O dinheiro continua indo
-                        para dentro depois, no fluxo de aporte.
-                      </p>
-                    </div>
-                  </div>
-
-                  <FieldGroup className="gap-4">
-                    <Field>
-                      <FieldLabel htmlFor="reserve-name">Nome da reserva</FieldLabel>
-                      <Input
-                        autoComplete="off"
-                        id="reserve-name"
-                        maxLength={80}
-                        placeholder="Ex.: Viagem de janeiro"
-                        value={createFormState.name}
-                        onChange={(event) =>
-                          updateCreateFormField("name", event.target.value)
-                        }
-                      />
-                    </Field>
-
-                    <Field>
-                      <FieldLabel htmlFor="reserve-target">Meta opcional</FieldLabel>
-                      <Input
-                        id="reserve-target"
-                        inputMode="decimal"
-                        min="0.01"
-                        placeholder="Ex.: 5000"
-                        step="0.01"
-                        type="number"
-                        value={createFormState.targetAmount}
-                        onChange={(event) =>
-                          updateCreateFormField("targetAmount", event.target.value)
-                        }
-                      />
-                      <FieldDescription>
-                        Se deixar em branco, a reserva acompanha apenas o valor
-                        acumulado sem barra de meta.
-                      </FieldDescription>
-                    </Field>
-                  </FieldGroup>
-
-                  <FieldError>{createError}</FieldError>
-
-                  <Button
-                    className="dashboard-cta w-full"
-                    disabled={!canCreateReserve}
-                    type="submit"
-                  >
-                    <PlusIcon data-icon="inline-start" />
-                    {isCreating ? "Criando..." : "Criar nova reserva"}
-                  </Button>
-                </form>
+                <ReserveComposerForm
+                  canCreateReserve={canCreateReserve}
+                  createError={createError}
+                  createFormState={createFormState}
+                  isCreating={isCreating}
+                  onSubmit={handleCreateReserve}
+                  onValueChange={updateCreateFormField}
+                />
               </div>
             </aside>
           </div>
         </div>
       </section>
+
+      <Drawer open={composerDrawerOpen} onOpenChange={setComposerDrawerOpen}>
+        <DrawerTrigger asChild>
+          <span className="hidden" />
+        </DrawerTrigger>
+        <DrawerContent className="bg-white/98 dark:bg-slate-950/98 lg:hidden">
+          <DrawerHeader>
+            <DrawerTitle>Criar nova caixinha</DrawerTitle>
+            <DrawerDescription>
+              No celular, a lista das reservas vem primeiro. A criação fica aqui
+              para reduzir competição visual sem perder velocidade de uso.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 pb-5">
+            <ReserveComposerForm
+              canCreateReserve={canCreateReserve}
+              createError={createError}
+              createFormState={createFormState}
+              isCreating={isCreating}
+              onSubmit={handleCreateReserve}
+              onValueChange={updateCreateFormField}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <Drawer
         direction={shouldUseMobileDrawer() ? "bottom" : "right"}
@@ -603,12 +595,12 @@ function ReserveMetricCard({
             <CardDescription className="text-[11px] font-medium tracking-[0.18em] uppercase text-slate-500 dark:text-slate-400">
               {label}
             </CardDescription>
-            <CardTitle className="text-2xl tracking-tight text-slate-800 dark:text-slate-50">
+            <CardTitle className="text-lg tracking-tight text-slate-800 sm:text-2xl dark:text-slate-50">
               {value}
             </CardTitle>
           </div>
-          <div className={cn("flex size-11 items-center justify-center rounded-2xl", accentClassName)}>
-            <Icon className="size-5" />
+          <div className={cn("flex size-10 items-center justify-center rounded-2xl sm:size-11", accentClassName)}>
+            <Icon className="size-4 sm:size-5" />
           </div>
         </div>
       </CardHeader>
@@ -757,6 +749,18 @@ type ReserveFactProps = {
   value: string
 }
 
+type ReserveComposerFormProps = {
+  canCreateReserve: boolean
+  createError: string | null
+  createFormState: CreateReserveFormState
+  isCreating: boolean
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+  onValueChange: <Key extends keyof CreateReserveFormState>(
+    field: Key,
+    value: CreateReserveFormState[Key]
+  ) => void
+}
+
 function ReserveFact({ label, value }: ReserveFactProps) {
   return (
     <div className="rounded-2xl border border-white/60 bg-white/68 px-3.5 py-3 dark:border-slate-700/70 dark:bg-slate-950/58">
@@ -767,6 +771,75 @@ function ReserveFact({ label, value }: ReserveFactProps) {
         {value}
       </div>
     </div>
+  )
+}
+
+function ReserveComposerForm({
+  canCreateReserve,
+  createError,
+  createFormState,
+  isCreating,
+  onSubmit,
+  onValueChange,
+}: ReserveComposerFormProps) {
+  return (
+    <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-[10px] font-medium tracking-[0.22em] uppercase text-slate-500 dark:text-slate-400">
+          Nova reserva
+        </span>
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold tracking-tight text-slate-800 dark:text-slate-50">
+            Criar nova caixinha
+          </h3>
+          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Nome obrigatório, meta opcional. O dinheiro continua indo para dentro
+            depois, no fluxo de aporte.
+          </p>
+        </div>
+      </div>
+
+      <FieldGroup className="gap-4">
+        <Field>
+          <FieldLabel htmlFor="reserve-name">Nome da reserva</FieldLabel>
+          <Input
+            autoComplete="off"
+            id="reserve-name"
+            maxLength={80}
+            placeholder="Ex.: Viagem de janeiro"
+            value={createFormState.name}
+            onChange={(event) => onValueChange("name", event.target.value)}
+          />
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor="reserve-target">Meta opcional</FieldLabel>
+          <Input
+            id="reserve-target"
+            inputMode="decimal"
+            min="0.01"
+            placeholder="Ex.: 5000"
+            step="0.01"
+            type="number"
+            value={createFormState.targetAmount}
+            onChange={(event) =>
+              onValueChange("targetAmount", event.target.value)
+            }
+          />
+          <FieldDescription>
+            Se deixar em branco, a reserva acompanha apenas o valor acumulado sem
+            barra de meta.
+          </FieldDescription>
+        </Field>
+      </FieldGroup>
+
+      <FieldError>{createError}</FieldError>
+
+      <Button className="dashboard-cta w-full" disabled={!canCreateReserve} type="submit">
+        <PlusIcon data-icon="inline-start" />
+        {isCreating ? "Criando..." : "Criar nova reserva"}
+      </Button>
+    </form>
   )
 }
 
