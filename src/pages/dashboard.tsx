@@ -10,6 +10,7 @@ import {
   ArrowUpRightIcon,
   CalendarDaysIcon,
   Clock3Icon,
+  LockIcon,
   LoaderCircleIcon,
   MinusIcon,
   PlusIcon,
@@ -244,6 +245,14 @@ export function DashboardPage() {
     () => filterCategories(loaderData.categories, formState.transactionType),
     [loaderData.categories, formState.transactionType]
   )
+  const reserveSystemCategoryId = React.useMemo(
+    () =>
+      loaderData.categories.find(
+        (category) =>
+          category.isSystem && category.name.trim().toLowerCase() === "reserva"
+      )?.id ?? null,
+    [loaderData.categories]
+  )
   const normalizedFormState = React.useMemo(
     () =>
       normalizeFormState(formState, {
@@ -278,6 +287,13 @@ export function DashboardPage() {
   const isDeleting = pendingIntent === "delete"
   const activePaymentMethod =
     paymentMethodFilter === "all" ? null : paymentMethodFilter
+
+  function isReserveLedgerTransaction(transaction: FinanceTransaction) {
+    return (
+      reserveSystemCategoryId !== null &&
+      transaction.categoryId === reserveSystemCategoryId
+    )
+  }
 
   function handleMonthChange(nextMonth: string) {
     resetToCreateEditor({ closeDrawer: true })
@@ -321,6 +337,10 @@ export function DashboardPage() {
   }
 
   function openEditorForTransaction(transaction: FinanceTransaction) {
+    if (isReserveLedgerTransaction(transaction)) {
+      return
+    }
+
     setDeleteConfirmation(null)
     setFormError(null)
     setScopeRequest(null)
@@ -538,6 +558,10 @@ export function DashboardPage() {
   }
 
   function handleRequestDelete(transaction: FinanceTransaction) {
+    if (isReserveLedgerTransaction(transaction)) {
+      return
+    }
+
     setFeedback(null)
     setFormError(null)
 
@@ -764,116 +788,161 @@ export function DashboardPage() {
                 </Card>
               ) : (
                 <div className="flex flex-col gap-2.5">
-                  {visibleTransactions.map((transaction, index) => (
-                    <article
-                      key={transaction.id}
-                      aria-label={`Editar ${transaction.description}`}
-                      role="button"
-                      tabIndex={0}
-                      className={cn(
-                        "glass-card animate-transaction-row flex items-center justify-between gap-3 rounded-[18px] border-white/55 px-3.5 py-3 text-left outline-none transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-slate-200/90 hover:shadow-[0_22px_36px_-30px_rgba(15,23,42,0.42)] focus-visible:border-slate-400/80 focus-visible:ring-2 focus-visible:ring-slate-300/50 dark:border-slate-700/70 dark:bg-slate-950/55 dark:hover:border-slate-600/85 dark:hover:shadow-[0_24px_40px_-32px_rgba(2,6,23,0.75)] dark:focus-visible:border-slate-500/80 dark:focus-visible:ring-slate-500/30",
-                        isEditing && editingTransaction?.id === transaction.id
-                          ? "border-indigo-200/90 bg-white/82 shadow-[0_24px_40px_-32px_rgba(99,102,241,0.28)] dark:border-indigo-400/40 dark:bg-slate-950/70"
-                          : null
-                      )}
-                      style={
-                        {
-                          "--transaction-enter-delay": `${Math.min(index * 45, 320)}ms`,
-                        } as React.CSSProperties
-                      }
-                      onClick={() => openEditorForTransaction(transaction)}
-                      onKeyDown={(event) =>
-                        handleTransactionCardKeyDown(event, transaction)
-                      }
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div
-                          className={cn(
-                            "flex size-9 shrink-0 items-center justify-center rounded-xl",
-                            transaction.transactionType === "in"
-                              ? "bg-emerald-100/80 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"
-                              : "bg-slate-200/80 text-slate-500 dark:bg-slate-800/80 dark:text-slate-300"
-                          )}
-                        >
-                          {transaction.transactionType === "in" ? (
-                            <PlusIcon className="size-4" />
-                          ) : (
-                            <MinusIcon className="size-4" />
-                          )}
-                        </div>
+                  {visibleTransactions.map((transaction, index) => {
+                    const isReserveLocked = isReserveLedgerTransaction(transaction)
 
-                        <div className="flex min-w-0 flex-col gap-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
-                              {transaction.description}
-                            </span>
-                            {transaction.recurrenceGroupId ? (
-                              <Badge variant="secondary" className="font-mono text-[10px] tracking-[0.14em] uppercase">
-                                Recorrente
-                              </Badge>
-                            ) : null}
-                            {isEditing && editingTransaction?.id === transaction.id ? (
+                    return (
+                      <article
+                        key={transaction.id}
+                        aria-disabled={isReserveLocked || undefined}
+                        aria-label={
+                          isReserveLocked
+                            ? `${transaction.description} protegido pelo Cofre`
+                            : `Editar ${transaction.description}`
+                        }
+                        role={isReserveLocked ? undefined : "button"}
+                        tabIndex={isReserveLocked ? undefined : 0}
+                        className={cn(
+                          "glass-card animate-transaction-row flex items-center justify-between gap-3 rounded-[18px] border-white/55 px-3.5 py-3 text-left outline-none transition-[border-color,box-shadow,transform] dark:border-slate-700/70 dark:bg-slate-950/55",
+                          isReserveLocked
+                            ? "cursor-default bg-white/68 dark:bg-slate-950/52"
+                            : "hover:-translate-y-0.5 hover:border-slate-200/90 hover:shadow-[0_22px_36px_-30px_rgba(15,23,42,0.42)] focus-visible:border-slate-400/80 focus-visible:ring-2 focus-visible:ring-slate-300/50 dark:hover:border-slate-600/85 dark:hover:shadow-[0_24px_40px_-32px_rgba(2,6,23,0.75)] dark:focus-visible:border-slate-500/80 dark:focus-visible:ring-slate-500/30",
+                          !isReserveLocked &&
+                            isEditing &&
+                            editingTransaction?.id === transaction.id
+                            ? "border-indigo-200/90 bg-white/82 shadow-[0_24px_40px_-32px_rgba(99,102,241,0.28)] dark:border-indigo-400/40 dark:bg-slate-950/70"
+                            : null
+                        )}
+                        style={
+                          {
+                            "--transaction-enter-delay": `${Math.min(index * 45, 320)}ms`,
+                          } as React.CSSProperties
+                        }
+                        onClick={
+                          isReserveLocked
+                            ? undefined
+                            : () => openEditorForTransaction(transaction)
+                        }
+                        onKeyDown={
+                          isReserveLocked
+                            ? undefined
+                            : (event) =>
+                                handleTransactionCardKeyDown(event, transaction)
+                        }
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div
+                            className={cn(
+                              "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                              transaction.transactionType === "in"
+                                ? "bg-emerald-100/80 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"
+                                : "bg-slate-200/80 text-slate-500 dark:bg-slate-800/80 dark:text-slate-300"
+                            )}
+                          >
+                            {transaction.transactionType === "in" ? (
+                              <PlusIcon className="size-4" />
+                            ) : (
+                              <MinusIcon className="size-4" />
+                            )}
+                          </div>
+
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                                {transaction.description}
+                              </span>
+                              {transaction.recurrenceGroupId ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="font-mono text-[10px] tracking-[0.14em] uppercase"
+                                >
+                                  Recorrente
+                                </Badge>
+                              ) : null}
+                              {isReserveLocked ? (
+                                <Badge
+                                  variant="outline"
+                                  className="gap-1 border-amber-200/80 bg-amber-50/85 text-[10px] tracking-[0.14em] uppercase text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200"
+                                >
+                                  <LockIcon className="size-3" />
+                                  Cofre
+                                </Badge>
+                              ) : null}
+                              {!isReserveLocked &&
+                              isEditing &&
+                              editingTransaction?.id === transaction.id ? (
+                                <Badge
+                                  variant="outline"
+                                  className="border-indigo-200/80 bg-indigo-50/85 text-[10px] tracking-[0.14em] uppercase text-indigo-700 dark:border-indigo-400/35 dark:bg-indigo-500/10 dark:text-indigo-200"
+                                >
+                                  Em edição
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                              <span>
+                                {resolveCategoryName(
+                                  loaderData.categories,
+                                  transaction.categoryId
+                                )}
+                              </span>
                               <Badge
                                 variant="outline"
-                                className="border-indigo-200/80 bg-indigo-50/85 text-[10px] tracking-[0.14em] uppercase text-indigo-700 dark:border-indigo-400/35 dark:bg-indigo-500/10 dark:text-indigo-200"
+                                className={cn(
+                                  "h-6 border text-[10px] font-semibold tracking-[0.14em] uppercase",
+                                  PAYMENT_METHOD_COPY[transaction.paymentMethod]
+                                    .badgeClassName
+                                )}
                               >
-                                Em edição
+                                {
+                                  PAYMENT_METHOD_COPY[transaction.paymentMethod]
+                                    .shortLabel
+                                }
                               </Badge>
-                            ) : null}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                            <span>
-                              {resolveCategoryName(
-                                loaderData.categories,
-                                transaction.categoryId
-                              )}
-                            </span>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "h-6 border text-[10px] font-semibold tracking-[0.14em] uppercase",
-                                PAYMENT_METHOD_COPY[transaction.paymentMethod]
-                                  .badgeClassName
-                              )}
-                            >
-                              {PAYMENT_METHOD_COPY[transaction.paymentMethod].shortLabel}
-                            </Badge>
-                            <span className="font-mono uppercase tracking-[0.16em]">
-                              {formatOccurredOn(transaction.occurredOn)}
-                            </span>
+                              <span className="font-mono uppercase tracking-[0.16em]">
+                                {formatOccurredOn(transaction.occurredOn)}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span
-                          className={cn(
-                            "font-mono text-sm font-semibold tracking-tight",
-                            transaction.transactionType === "in"
-                              ? "text-emerald-600 dark:text-emerald-300"
-                              : "text-slate-700 dark:text-slate-200"
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span
+                            className={cn(
+                              "font-mono text-sm font-semibold tracking-tight",
+                              transaction.transactionType === "in"
+                                ? "text-emerald-600 dark:text-emerald-300"
+                                : "text-slate-700 dark:text-slate-200"
+                            )}
+                          >
+                            {transaction.transactionType === "in" ? "+" : "-"}{" "}
+                            {BRL_FORMATTER.format(transaction.amount)}
+                          </span>
+
+                          {isReserveLocked ? (
+                            <div className="flex items-center gap-1 rounded-2xl border border-white/60 bg-white/72 px-2.5 py-1 text-[10px] font-medium tracking-[0.14em] uppercase text-slate-500 dark:border-slate-700/70 dark:bg-slate-950/58 dark:text-slate-300">
+                              <LockIcon className="size-3.5" />
+                              Imutável
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
+                              aria-label={`Excluir ${transaction.description}`}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleRequestDelete(transaction)
+                              }}
+                            >
+                              <Trash2Icon data-icon="inline-end" />
+                            </Button>
                           )}
-                        >
-                          {transaction.transactionType === "in" ? "+" : "-"}{" "}
-                          {BRL_FORMATTER.format(transaction.amount)}
-                        </span>
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          className="text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
-                          aria-label={`Excluir ${transaction.description}`}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            handleRequestDelete(transaction)
-                          }}
-                        >
-                          <Trash2Icon data-icon="inline-end" />
-                        </Button>
-                      </div>
-                    </article>
-                  ))}
+                        </div>
+                      </article>
+                    )
+                  })}
                 </div>
               )}
             </section>

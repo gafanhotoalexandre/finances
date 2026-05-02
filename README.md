@@ -8,7 +8,7 @@ Project Finance é um app de fluxo de caixa pessoal com login simples, convites 
 - shell de auth refinada: linguagem mais humana, superfície mais limpa e fluxo sem estados intermediários falsos.
 - v0.2 encerrada: rota `/admin` com emissão, revogação e histórico administrativo de convites.
 - v0.3.2 validada: edição sem atrito no Dashboard com clique para editar, recorrência com escopo explícito, smart defaults e animações suaves na listagem.
-- v0.4.0 entregue: rota `/reservas` com cards das caixinhas, metas visuais, criação de reservas e fluxo de aporte conectado ao dashboard.
+- v0.4.1 entregue: dashboard com trava visual para lançamentos do Cofre e mobile de `/reservas` reorganizado para priorizar lista e criação sob demanda.
 
 ## Stack
 
@@ -59,14 +59,15 @@ Arquivos relacionados:
 4. Confirme que `Confirm email` está desativado em `Authentication`.
 5. Rode `npm run dev`.
 
-## Validação rápida da v0.4.0
+## Validação rápida da v0.4.1
 
 1. Entre em `/reservas` com um workspace autenticado.
-2. Crie uma reserva com apenas `nome` e confirme que o card nasce com `R$ 0,00`, sem meta e sem histórico.
-3. Crie outra reserva com `nome` e `meta`, e confirme que o card mostra `targetAmount`, barra de progresso e valor restante.
-4. Dentro do card, use `Guardar dinheiro` com `amount`, `occurredOn` e `description`, e confirme o feedback de sucesso.
-5. Reabra `/dashboard` no mesmo workspace e confirme que o aporte virou uma saída real na categoria de reserva.
-6. Volte para `/reservas` e confirme que `currentAmount`, `lastEntryOn` e o progresso foram atualizados após a revalidação.
+2. No mobile, confirme que a lista de reservas aparece antes do composer completo e que o botão `Nova caixinha` abre um Drawer para criação.
+3. Crie uma reserva com apenas `nome` e confirme que o card nasce com `R$ 0,00`, sem meta e sem histórico.
+4. Crie outra reserva com `nome` e `meta`, e confirme que o card mostra `targetAmount`, barra de progresso e valor restante.
+5. Dentro do card, use `Guardar dinheiro` com `amount`, `occurredOn` e `description`, e confirme o feedback de sucesso.
+6. Reabra `/dashboard` no mesmo workspace e confirme que o aporte virou uma saída real na categoria de reserva, sem hover de edição, sem lixeira e com indicação `Cofre`/imutável.
+7. Volte para `/reservas` e confirme que `currentAmount`, `lastEntryOn` e o progresso foram atualizados após a revalidação.
 
 ## Validação rápida da v0.3.0
 
@@ -169,3 +170,5 @@ Importante: essa migração é destrutiva para os dados dessas tabelas. Use em a
 - cards das caixinhas com valor atual, meta, progresso e último aporte
 - fluxo `Guardar dinheiro` conectado à RPC `allocate_to_reserve(...)`
 - revalidação local após criar reserva e após cada novo aporte
+- trava de segurança no dashboard para impedir edição/exclusão de lançamentos da categoria de sistema `Reserva`
+- mobile de `/reservas` com lista priorizada e composer deslocado para Drawer sob demanda
