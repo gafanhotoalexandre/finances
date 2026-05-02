@@ -6,6 +6,7 @@ import AuthHandoffPage from "@/pages/auth-handoff"
 import DashboardPage from "@/pages/dashboard"
 import InviteActivatePage from "@/pages/invite-activate"
 import LoginPage from "@/pages/login"
+import ReservesPage from "@/pages/reserves"
 import NotFoundPage from "@/pages/not-found"
 import RouteErrorPage from "@/pages/route-error"
 import AppLayout from "@/routes/layouts/app-layout"
@@ -19,6 +20,7 @@ import {
   inviteLoader,
   loginAction,
   loginLoader,
+  reservesLoader,
   rootLoader,
   signOutAction,
 } from "@/routes/data"
@@ -69,6 +71,18 @@ export const router = createBrowserRouter([
           {
             path: "sign-out",
             action: signOutAction,
+          },
+        ],
+      },
+      {
+        path: "reservas",
+        Component: AppLayout,
+        children: [
+          {
+            id: "reserves",
+            index: true,
+            loader: reservesLoader,
+            Component: ReservesPage,
           },
         ],
       },

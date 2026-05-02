@@ -18,10 +18,12 @@ import {
   formatMonthLabel,
   getCurrentMonthParam,
   getDashboardData,
+  getReservesSummary,
   isMonthParam,
   type DashboardSummary,
   type FinanceCategory,
   type FinanceTransaction,
+  type ReserveSummary,
 } from "@/lib/finance"
 import { hasSupabaseEnv, supabase } from "@/lib/supabase"
 import type { AppRole } from "@/store/auth"
@@ -99,6 +101,12 @@ export type DashboardLoaderData = {
   monthLabel: string
   summary: DashboardSummary
   transactions: FinanceTransaction[]
+  workspaceId: string
+}
+
+export type ReservesLoaderData = {
+  configured: boolean
+  reserves: ReserveSummary[]
   workspaceId: string
 }
 
@@ -272,6 +280,17 @@ export async function dashboardLoader({ request }: LoaderFunctionArgs) {
     transactions: dashboardData.transactions,
     workspaceId: snapshot.workspaceId,
   } satisfies DashboardLoaderData
+}
+
+export async function reservesLoader() {
+  const snapshot = await requireWorkspaceAccess()
+  const reserves = await getReservesSummary()
+
+  return {
+    configured: true,
+    reserves,
+    workspaceId: snapshot.workspaceId,
+  } satisfies ReservesLoaderData
 }
 
 export async function adminLoader() {

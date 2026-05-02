@@ -39,6 +39,36 @@ export type DashboardData = {
   transactions: FinanceTransaction[]
 }
 
+export type FinanceReserve = {
+  createdAt: string
+  id: string
+  name: string
+  targetAmount: number | null
+  updatedAt: string
+}
+
+export type ReserveEntryType = TransactionType
+
+export type FinanceReserveEntry = {
+  amount: number
+  createdAt: string
+  description: string
+  entryType: ReserveEntryType
+  id: string
+  notes: string | null
+  occurredOn: string
+  reserveId: string
+  sourceTransactionId: string | null
+  updatedAt: string
+}
+
+export type ReserveSummary = FinanceReserve & {
+  currentAmount: number
+  entryCount: number
+  lastEntryOn: string | null
+  remainingAmount: number | null
+}
+
 export type CreateTransactionInput = {
   amount: number
   categoryId: string
@@ -48,6 +78,12 @@ export type CreateTransactionInput = {
   paymentMethod: PaymentMethod
   recurrenceGroupId: string | null
   transactionType: TransactionType
+  workspaceId: string
+}
+
+export type CreateReserveInput = {
+  name: string
+  targetAmount: number | null
   workspaceId: string
 }
 
@@ -69,6 +105,21 @@ export type DeleteTransactionInput = {
 
 export type UpdateTransactionArgs = DeleteTransactionInput & {
   values: UpdateTransactionInput
+}
+
+export type AllocateToReserveInput = {
+  amount: number
+  categoryId?: string | null
+  description: string
+  notes?: string | null
+  occurredOn: string
+  paymentMethod?: PaymentMethod
+  reserveId: string
+}
+
+export type AllocateToReserveResult = {
+  reserveEntryId: string
+  transactionId: string
 }
 
 type CategoryRow = {
@@ -95,6 +146,23 @@ type MutationTransactionRow = {
   description: string
   id: string
   occurred_on: string
+}
+
+type ReserveSummaryRow = {
+  created_at: string
+  current_amount: number | string
+  entry_count: number | string
+  last_entry_on: string | null
+  name: string
+  remaining_amount: number | string | null
+  reserve_id: string
+  target_amount: number | string | null
+  updated_at: string
+}
+
+type AllocateToReserveRow = {
+  reserve_entry_id: string
+  transaction_id: string
 }
 
 const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/
@@ -255,6 +323,112 @@ export async function createTransactions(entries: CreateTransactionInput[]) {
   }
 }
 
+export async function createReserve({
+  name,
+  targetAmount,
+  workspaceId,
+}: CreateReserveInput) {
+  const normalizedName = name.trim()
+
+  if (normalizedName.length === 0) {
+    throw new Error("RESERVE_NAME_REQUIRED")
+  }
+
+  if (normalizedName.length < 2 || normalizedName.length > 80) {
+    throw new Error("RESERVE_NAME_LENGTH_INVALID")
+  }
+
+  if (!workspaceId) {
+    throw new Error("WORKSPACE_CONTEXT_REQUIRED")
+  }
+
+  if (
+    targetAmount !== null &&
+    (!Number.isFinite(targetAmount) || Number(targetAmount) <= 0)
+  ) {
+    throw new Error("INVALID_TARGET_AMOUNT")
+  }
+
+  const { error } = await supabase.from("reserves").insert({
+    name: normalizedName,
+    target_amount: targetAmount,
+    workspace_id: workspaceId,
+  })
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("RESERVE_NAME_ALREADY_EXISTS")
+    }
+
+    throw error
+  }
+}
+
+export async function getReservesSummary() {
+  const { data, error } = await supabase.rpc("get_reserves_summary")
+
+  if (error) {
+    throw error
+  }
+
+  return ((data ?? []) as ReserveSummaryRow[]).map(mapReserveSummaryRow)
+}
+
+export async function allocateToReserve({
+  amount,
+  categoryId = null,
+  description,
+  notes,
+  occurredOn,
+  paymentMethod = "cash",
+  reserveId,
+}: AllocateToReserveInput) {
+  const normalizedAmount = Number(amount)
+  const normalizedDescription = description.trim()
+  const normalizedNotes = notes?.trim() || null
+
+  if (!reserveId) {
+    throw new Error("RESERVE_ID_REQUIRED")
+  }
+
+  if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+    throw new Error("INVALID_AMOUNT")
+  }
+
+  if (normalizedDescription.length < 3) {
+    throw new Error("INVALID_DESCRIPTION")
+  }
+
+  if (!occurredOn) {
+    throw new Error("INVALID_OCCURRED_ON")
+  }
+
+  const { data, error } = await supabase.rpc("allocate_to_reserve", {
+    p_amount: normalizedAmount,
+    p_category_id: categoryId,
+    p_description: normalizedDescription,
+    p_notes: normalizedNotes,
+    p_occurred_on: occurredOn,
+    p_payment_method: paymentMethod,
+    p_reserve_id: reserveId,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  const row = ((data ?? []) as AllocateToReserveRow[])[0]
+
+  if (!row) {
+    throw new Error("RESERVE_ALLOCATION_FAILED")
+  }
+
+  return {
+    reserveEntryId: row.reserve_entry_id,
+    transactionId: row.transaction_id,
+  } satisfies AllocateToReserveResult
+}
+
 export async function updateTransaction({
   scope,
   targetOccurredOn,
@@ -406,6 +580,21 @@ function mapTransactionRow(row: TransactionRow): FinanceTransaction {
     paymentMethod: row.payment_method,
     recurrenceGroupId: row.recurrence_group_id,
     transactionType: row.transaction_type,
+  }
+}
+
+function mapReserveSummaryRow(row: ReserveSummaryRow): ReserveSummary {
+  return {
+    createdAt: row.created_at,
+    currentAmount: Number(row.current_amount),
+    entryCount: Number(row.entry_count),
+    id: row.reserve_id,
+    lastEntryOn: row.last_entry_on,
+    name: row.name,
+    remainingAmount:
+      row.remaining_amount === null ? null : Number(row.remaining_amount),
+    targetAmount: row.target_amount === null ? null : Number(row.target_amount),
+    updatedAt: row.updated_at,
   }
 }
 

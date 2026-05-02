@@ -1,13 +1,14 @@
 # Project Finance
 
-Project Finance é um app de fluxo de caixa pessoal com login simples, convites por workspace e dashboard mensal real. A stack prioriza velocidade de iteração no frontend e regras de acesso fortes no banco, sem Edge Functions e sem camadas desnecessárias.
+Project Finance é um app de fluxo de caixa pessoal com login simples, convites por workspace, dashboard mensal real e um cofre de reservas separado do ledger principal. A stack prioriza velocidade de iteração no frontend e regras de acesso fortes no banco, sem Edge Functions e sem camadas desnecessárias.
 
 ## Estado atual
 
 - v0.2.4 validada: sessão blindada entre Supabase, Zustand e React Router com a rota `/handoff`.
 - shell de auth refinada: linguagem mais humana, superfície mais limpa e fluxo sem estados intermediários falsos.
 - v0.2 encerrada: rota `/admin` com emissão, revogação e histórico administrativo de convites.
-- v0.3.2 em foco: edição sem atrito no Dashboard com clique para editar, recorrência com escopo explícito, smart defaults e animações suaves na listagem.
+- v0.3.2 validada: edição sem atrito no Dashboard com clique para editar, recorrência com escopo explícito, smart defaults e animações suaves na listagem.
+- v0.4.0 entregue: rota `/reservas` com cards das caixinhas, metas visuais, criação de reservas e fluxo de aporte conectado ao dashboard.
 
 ## Stack
 
@@ -26,6 +27,7 @@ Project Finance é um app de fluxo de caixa pessoal com login simples, convites 
 - `/handoff`
 - `/invite/:code`
 - `/dashboard`
+- `/reservas`
 - `/admin`
 
 ## Princípios da arquitetura
@@ -53,9 +55,18 @@ Arquivos relacionados:
 
 1. Rode `npm install`.
 2. Crie o `.env` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` reais.
-3. Aplique as migrations em `supabase/migrations/` no projeto Supabase, incluindo foundation, snapshots de histórico e ajuste de RLS para convites isolados.
+3. Aplique as migrations em `supabase/migrations/` no projeto Supabase, incluindo foundation, payment methods, snapshots de histórico, o módulo `20260502162824_v040_reserves_module.sql` e os ajustes de RLS para convites isolados.
 4. Confirme que `Confirm email` está desativado em `Authentication`.
 5. Rode `npm run dev`.
+
+## Validação rápida da v0.4.0
+
+1. Entre em `/reservas` com um workspace autenticado.
+2. Crie uma reserva com apenas `nome` e confirme que o card nasce com `R$ 0,00`, sem meta e sem histórico.
+3. Crie outra reserva com `nome` e `meta`, e confirme que o card mostra `targetAmount`, barra de progresso e valor restante.
+4. Dentro do card, use `Guardar dinheiro` com `amount`, `occurredOn` e `description`, e confirme o feedback de sucesso.
+5. Reabra `/dashboard` no mesmo workspace e confirme que o aporte virou uma saída real na categoria de reserva.
+6. Volte para `/reservas` e confirme que `currentAmount`, `lastEntryOn` e o progresso foram atualizados após a revalidação.
 
 ## Validação rápida da v0.3.0
 
@@ -150,3 +161,11 @@ Importante: essa migração é destrutiva para os dados dessas tabelas. Use em a
 - saldo anterior acumulado antes da competência aberta
 - caixa atual calculado a partir do histórico + movimentos do mês
 - ampliar operações e acompanhamento do caixa
+
+### v0.4
+
+- rota protegida `/reservas` integrada ao mesmo shell do dashboard
+- criação de reservas com `name` obrigatório e `targetAmount` opcional
+- cards das caixinhas com valor atual, meta, progresso e último aporte
+- fluxo `Guardar dinheiro` conectado à RPC `allocate_to_reserve(...)`
+- revalidação local após criar reserva e após cada novo aporte
