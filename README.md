@@ -7,7 +7,7 @@ Project Finance é um app de fluxo de caixa pessoal com login simples, convites 
 - v0.2.4 validada: sessão blindada entre Supabase, Zustand e React Router com a rota `/handoff`.
 - shell de auth refinada: linguagem mais humana, superfície mais limpa e fluxo sem estados intermediários falsos.
 - v0.2 encerrada: rota `/admin` com emissão, revogação e histórico administrativo de convites.
-- v0.3.1 em foco: meios de pagamento no Dashboard com discriminação visual, filtro local e cadastro no próprio lançamento.
+- v0.3.2 em foco: edição sem atrito no Dashboard com clique para editar, recorrência com escopo explícito, smart defaults e animações suaves na listagem.
 
 ## Stack
 
@@ -73,6 +73,15 @@ Arquivos relacionados:
 3. Confirme que a listagem mensal mostra um badge visual para o meio de pagamento sem alterar a ordem nem a leitura do lançamento.
 4. Use o filtro `Todos os meios` e troque para um método específico, confirmando que o recorte acontece apenas na lista do mês aberto.
 5. Crie um lançamento com repetição maior que `1` e confirme que todas as parcelas futuras herdam o mesmo `payment_method`.
+
+## Validação rápida da v0.3.2
+
+1. Entre em `/dashboard` e clique em qualquer card de lançamento, confirmando que a edição abre no painel lateral do desktop e no Drawer do mobile com os campos preenchidos.
+2. Edite um lançamento simples e confirme que `description`, `amount`, `transactionType`, `paymentMethod`, `categoryId` e `occurredOn` persistem corretamente após salvar.
+3. Edite um lançamento recorrente e confirme que o app intercepta com as opções `Apenas este lançamento` e `Este e os futuros`.
+4. No modo `Este e os futuros`, altere descrição, valor, tipo, categoria e meio de pagamento, e confirme que as parcelas futuras recebem a mudança preservando a data original de cada uma.
+5. Crie uma recorrência com repetição maior que `1` e confirme que a descrição é numerada automaticamente como `(1/n)`, `(2/n)`, `(3/n)`...
+6. Faça um create com um `transactionType` e `paymentMethod` diferentes do padrão e confirme que o próximo formulário novo já reaproveita esses valores apenas depois do save bem-sucedido.
 6. Revalide que `Saldo Anterior`, `Entradas`, `Saidas` e `Caixa Atual` continuam com a mesma matemática cronológica de v0.3.0.
 
 ## Validação rápida da v0.2.5

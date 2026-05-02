@@ -22,14 +22,18 @@ import {
   addMonthsToOccurredOn,
   createTransactions,
   deleteTransaction,
+  formatInstallmentDescription,
   formatMonthLabel,
   getCurrentAppYear,
   getCurrentMonthParam,
   getCurrentOccurredOn,
+  updateTransaction,
   type FinanceCategory,
   type FinanceTransaction,
   type PaymentMethod,
+  type TransactionMutationScope,
   type TransactionType,
+  type UpdateTransactionInput,
 } from "@/lib/finance"
 import { cn } from "@/lib/utils"
 import type { DashboardLoaderData } from "@/routes/data"
@@ -85,6 +89,31 @@ type FeedbackState = {
   message: string
 }
 
+type PendingIntent = "create" | "update" | "delete" | null
+
+type EditorMode = "create" | "edit"
+
+type TransactionCreateDefaults = Pick<
+  TransactionFormState,
+  "paymentMethod" | "transactionType"
+>
+
+type ScopeRequestState =
+  | {
+      action: "delete"
+      transaction: FinanceTransaction
+    }
+  | {
+      action: "save"
+      transaction: FinanceTransaction
+      values: UpdateTransactionInput
+    }
+
+type DeleteConfirmationState = {
+  scope: TransactionMutationScope
+  transaction: FinanceTransaction
+}
+
 type MonthOption = {
   label: string
   value: string
@@ -101,6 +130,11 @@ type TransactionFormState = {
 }
 
 type PaymentMethodFilter = PaymentMethod | "all"
+
+const DEFAULT_CREATE_DEFAULTS = {
+  paymentMethod: "cash",
+  transactionType: "out",
+} satisfies TransactionCreateDefaults
 
 const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
@@ -174,27 +208,50 @@ export function DashboardPage() {
   const revalidator = useRevalidator()
   const [searchParams, setSearchParams] = useSearchParams()
   const [drawerOpen, setDrawerOpen] = React.useState(false)
+  const [editorMode, setEditorMode] = React.useState<EditorMode>("create")
+  const [editingTransactionId, setEditingTransactionId] =
+    React.useState<string | null>(null)
   const [feedback, setFeedback] = React.useState<FeedbackState | null>(null)
   const [formError, setFormError] = React.useState<string | null>(null)
-  const [pendingIntent, setPendingIntent] = React.useState<
-    "create" | "delete" | null
-  >(null)
+  const [pendingIntent, setPendingIntent] = React.useState<PendingIntent>(null)
   const [paymentMethodFilter, setPaymentMethodFilter] =
     React.useState<PaymentMethodFilter>("all")
-  const [transactionToDelete, setTransactionToDelete] =
-    React.useState<FinanceTransaction | null>(null)
+  const [scopeRequest, setScopeRequest] =
+    React.useState<ScopeRequestState | null>(null)
+  const [deleteConfirmation, setDeleteConfirmation] =
+    React.useState<DeleteConfirmationState | null>(null)
+  const [smartDefaults, setSmartDefaults] =
+    React.useState<TransactionCreateDefaults>(DEFAULT_CREATE_DEFAULTS)
   const [isMonthTransitionPending, startMonthTransition] = React.useTransition()
   const [formState, setFormState] = React.useState(() =>
-    createTransactionFormState(loaderData.month)
+    createTransactionFormState(loaderData.month, DEFAULT_CREATE_DEFAULTS)
   )
+
+  const editingTransaction = React.useMemo(() => {
+    if (editorMode !== "edit") {
+      return null
+    }
+
+    return (
+      loaderData.transactions.find(
+        (transaction) => transaction.id === editingTransactionId
+      ) ?? null
+    )
+  }, [editorMode, editingTransactionId, loaderData.transactions])
+  const isEditing = editorMode === "edit" && editingTransaction !== null
 
   const filteredCategories = React.useMemo(
     () => filterCategories(loaderData.categories, formState.transactionType),
     [loaderData.categories, formState.transactionType]
   )
   const normalizedFormState = React.useMemo(
-    () => normalizeFormState(formState, loaderData.month, filteredCategories),
-    [filteredCategories, formState, loaderData.month]
+    () =>
+      normalizeFormState(formState, {
+        filteredCategories,
+        mode: editorMode,
+        month: loaderData.month,
+      }),
+    [editorMode, filteredCategories, formState, loaderData.month]
   )
   const visibleTransactions = React.useMemo(
     () =>
@@ -217,10 +274,20 @@ export function DashboardPage() {
     isMonthTransitionPending ||
     (navigation.state !== "idle" && navigation.location?.pathname === "/dashboard")
   const isRevalidating = revalidator.state !== "idle"
-  const isCreating = pendingIntent === "create"
+  const isSubmitting = pendingIntent === "create" || pendingIntent === "update"
   const isDeleting = pendingIntent === "delete"
   const activePaymentMethod =
     paymentMethodFilter === "all" ? null : paymentMethodFilter
+
+  React.useEffect(() => {
+    if (editorMode === "edit" && !editingTransaction) {
+      setDrawerOpen(false)
+      setEditorMode("create")
+      setEditingTransactionId(null)
+      setFormError(null)
+      setFormState(createTransactionFormState(dashboardData.month, smartDefaults))
+    }
+  }, [dashboardData.month, editorMode, editingTransaction, smartDefaults])
 
   function handleMonthChange(nextMonth: string) {
     startMonthTransition(() => {
@@ -230,20 +297,204 @@ export function DashboardPage() {
     })
   }
 
+  function resetToCreateEditor(options?: {
+    closeDrawer?: boolean
+    defaults?: TransactionCreateDefaults
+  }) {
+    const nextDefaults = options?.defaults ?? smartDefaults
+
+    setDeleteConfirmation(null)
+    setEditorMode("create")
+    setEditingTransactionId(null)
+    setFormError(null)
+    setFormState(createTransactionFormState(dashboardData.month, nextDefaults))
+
+    if (options?.closeDrawer) {
+      setDrawerOpen(false)
+    }
+  }
+
+  function handleDrawerOpenChange(open: boolean) {
+    setDrawerOpen(open)
+
+    if (!open) {
+      setDeleteConfirmation(null)
+      setFormError(null)
+      setScopeRequest(null)
+      setEditorMode("create")
+      setEditingTransactionId(null)
+      setFormState(createTransactionFormState(dashboardData.month, smartDefaults))
+    }
+  }
+
+  function openEditorForTransaction(transaction: FinanceTransaction) {
+    setDeleteConfirmation(null)
+    setFormError(null)
+    setScopeRequest(null)
+    setEditorMode("edit")
+    setEditingTransactionId(transaction.id)
+    setFormState(createEditTransactionFormState(transaction))
+
+    if (shouldUseMobileDrawer()) {
+      setDrawerOpen(true)
+      return
+    }
+
+    setDrawerOpen(false)
+  }
+
   function updateFormField<Key extends keyof TransactionFormState>(
     field: Key,
     value: TransactionFormState[Key]
   ) {
+    setFormError(null)
     setFormState((current) => ({
       ...current,
       [field]: value,
     }))
   }
 
-  async function handleCreateTransactions(event: React.FormEvent<HTMLFormElement>) {
+  async function runCreate(
+    entries: ReturnType<typeof buildRecurringTransactions>
+  ) {
+    setPendingIntent("create")
+
+    try {
+      await createTransactions(entries)
+
+      const nextDefaults = {
+        paymentMethod: normalizedFormState.paymentMethod,
+        transactionType: normalizedFormState.transactionType,
+      } satisfies TransactionCreateDefaults
+      const plural = entries.length > 1 ? "s" : ""
+
+      setFeedback({
+        kind: "success",
+        message: `${entries.length} lançamento${plural} salvo${plural} com sucesso.`,
+      })
+      setSmartDefaults(nextDefaults)
+      resetToCreateEditor({ closeDrawer: true, defaults: nextDefaults })
+      revalidator.revalidate()
+    } catch (error) {
+      setFormError(
+        getFriendlyErrorMessage(
+          error,
+          "Não foi possível salvar as transações agora."
+        )
+      )
+    } finally {
+      setPendingIntent(null)
+    }
+  }
+
+  async function runUpdate(
+    transaction: FinanceTransaction,
+    values: UpdateTransactionInput,
+    scope: TransactionMutationScope
+  ) {
+    setPendingIntent("update")
+
+    try {
+      await updateTransaction({
+        scope,
+        targetOccurredOn: transaction.occurredOn,
+        targetRecurrenceGroupId: transaction.recurrenceGroupId,
+        transactionId: transaction.id,
+        values,
+      })
+
+      setFeedback({
+        kind: "success",
+        message:
+          scope === "single"
+            ? "Lançamento atualizado com sucesso."
+            : "Lançamento e recorrências futuras atualizados com sucesso. As datas originais foram preservadas.",
+      })
+      setScopeRequest(null)
+      resetToCreateEditor({ closeDrawer: true })
+      revalidator.revalidate()
+    } catch (error) {
+      setFormError(
+        getFriendlyErrorMessage(
+          error,
+          "Não foi possível atualizar o lançamento agora."
+        )
+      )
+    } finally {
+      setPendingIntent(null)
+    }
+  }
+
+  async function runDelete(
+    transaction: FinanceTransaction,
+    scope: TransactionMutationScope
+  ) {
+    setPendingIntent("delete")
+
+    try {
+      await deleteTransaction({
+        scope,
+        targetOccurredOn: transaction.occurredOn,
+        targetRecurrenceGroupId: transaction.recurrenceGroupId,
+        transactionId: transaction.id,
+      })
+
+      setFeedback({
+        kind: "success",
+        message:
+          scope === "single"
+            ? "Lançamento removido permanentemente."
+            : "Lançamento selecionado e recorrências futuras removidos permanentemente.",
+      })
+      setDeleteConfirmation(null)
+      setScopeRequest(null)
+      resetToCreateEditor({ closeDrawer: true })
+      revalidator.revalidate()
+    } catch (error) {
+      setFeedback({
+        kind: "error",
+        message: getFriendlyErrorMessage(
+          error,
+          "Não foi possível excluir o lançamento agora."
+        ),
+      })
+    } finally {
+      setPendingIntent(null)
+    }
+  }
+
+  async function handleSubmitTransactions(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setFeedback(null)
     setFormError(null)
+
+    if (isEditing && editingTransaction) {
+      let values
+
+      try {
+        values = buildUpdateTransactionInput(normalizedFormState)
+      } catch (error) {
+        setFormError(
+          getFriendlyErrorMessage(
+            error,
+            "Revise descrição, valor, categoria, data e meio antes de salvar."
+          )
+        )
+        return
+      }
+
+      if (editingTransaction.recurrenceGroupId) {
+        setScopeRequest({
+          action: "save",
+          transaction: editingTransaction,
+          values,
+        })
+        return
+      }
+
+      await runUpdate(editingTransaction, values, "single")
+      return
+    }
 
     let entries
 
@@ -262,62 +513,60 @@ export function DashboardPage() {
       return
     }
 
-    setPendingIntent("create")
-
-    try {
-      await createTransactions(entries)
-
-      const plural = entries.length > 1 ? "s" : ""
-      setFeedback({
-        kind: "success",
-        message: `${entries.length} lançamento${plural} salvo${plural} com sucesso.`,
-      })
-      setFormState(createTransactionFormState(dashboardData.month))
-      setDrawerOpen(false)
-      revalidator.revalidate()
-    } catch (error) {
-      setFormError(
-        getFriendlyErrorMessage(
-          error,
-          "Não foi possível salvar as transações agora."
-        )
-      )
-    } finally {
-      setPendingIntent(null)
-    }
+    await runCreate(entries)
   }
 
-  async function handleConfirmDelete(
-    event: React.MouseEvent<HTMLButtonElement>
-  ) {
-    event.preventDefault()
-
-    if (!transactionToDelete) {
+  async function handleScopeSave(scope: TransactionMutationScope) {
+    if (!scopeRequest || scopeRequest.action !== "save") {
       return
     }
 
-    setFeedback(null)
-    setPendingIntent("delete")
+    const { transaction, values } = scopeRequest
 
-    try {
-      await deleteTransaction(transactionToDelete.id)
-      setFeedback({
-        kind: "success",
-        message: "Lançamento removido permanentemente.",
-      })
-      setTransactionToDelete(null)
-      revalidator.revalidate()
-    } catch (error) {
-      setFeedback({
-        kind: "error",
-        message: getFriendlyErrorMessage(
-          error,
-          "Não foi possível excluir o lançamento agora."
-        ),
-      })
-    } finally {
-      setPendingIntent(null)
+    setScopeRequest(null)
+    await runUpdate(transaction, values, scope)
+  }
+
+  function handleScopeDelete(scope: TransactionMutationScope) {
+    if (!scopeRequest || scopeRequest.action !== "delete") {
+      return
     }
+
+    setDeleteConfirmation({
+      scope,
+      transaction: scopeRequest.transaction,
+    })
+    setScopeRequest(null)
+  }
+
+  function handleRequestDelete(transaction: FinanceTransaction) {
+    setFeedback(null)
+    setFormError(null)
+
+    if (transaction.recurrenceGroupId) {
+      setScopeRequest({
+        action: "delete",
+        transaction,
+      })
+      return
+    }
+
+    setDeleteConfirmation({
+      scope: "single",
+      transaction,
+    })
+  }
+
+  function handleTransactionCardKeyDown(
+    event: React.KeyboardEvent<HTMLElement>,
+    transaction: FinanceTransaction
+  ) {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return
+    }
+
+    event.preventDefault()
+    openEditorForTransaction(transaction)
   }
 
   return (
@@ -349,7 +598,7 @@ export function DashboardPage() {
 
             <div className="flex w-full flex-col gap-1.5 sm:w-auto">
               <span className="px-1 font-mono text-[10px] font-medium tracking-[0.2em] uppercase text-slate-500 dark:text-slate-400">
-                Competência
+                Mês
               </span>
               <div className="glass-card flex h-11 w-full items-center gap-2 rounded-2xl border-white/60 px-3 sm:w-55 dark:border-slate-700/75 dark:bg-slate-950/58">
                 <CalendarDaysIcon className="size-4 text-slate-500 dark:text-slate-300" />
@@ -420,7 +669,7 @@ export function DashboardPage() {
                     Lançamentos do mês
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {loaderData.monthLabel}
+                    {loaderData.monthLabel} · clique ou toque para editar
                   </p>
                 </div>
                 <div className="flex w-full flex-col items-stretch gap-2 text-[11px] text-slate-500 sm:w-auto sm:flex-row sm:items-center sm:justify-end dark:text-slate-400">
@@ -484,7 +733,10 @@ export function DashboardPage() {
                     <Button
                       type="button"
                       className="dashboard-cta lg:hidden"
-                      onClick={() => setDrawerOpen(true)}
+                      onClick={() => {
+                        resetToCreateEditor()
+                        setDrawerOpen(true)
+                      }}
                     >
                       <PlusIcon data-icon="inline-end" />
                       Criar primeiro lançamento
@@ -514,10 +766,27 @@ export function DashboardPage() {
                 </Card>
               ) : (
                 <div className="flex flex-col gap-2.5">
-                  {visibleTransactions.map((transaction) => (
+                  {visibleTransactions.map((transaction, index) => (
                     <article
                       key={transaction.id}
-                      className="glass-card flex items-center justify-between gap-3 rounded-[18px] border-white/55 px-3.5 py-3 dark:border-slate-700/70 dark:bg-slate-950/55"
+                      aria-label={`Editar ${transaction.description}`}
+                      role="button"
+                      tabIndex={0}
+                      className={cn(
+                        "glass-card animate-transaction-row flex items-center justify-between gap-3 rounded-[18px] border-white/55 px-3.5 py-3 text-left outline-none transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-slate-200/90 hover:shadow-[0_22px_36px_-30px_rgba(15,23,42,0.42)] focus-visible:border-slate-400/80 focus-visible:ring-2 focus-visible:ring-slate-300/50 dark:border-slate-700/70 dark:bg-slate-950/55 dark:hover:border-slate-600/85 dark:hover:shadow-[0_24px_40px_-32px_rgba(2,6,23,0.75)] dark:focus-visible:border-slate-500/80 dark:focus-visible:ring-slate-500/30",
+                        isEditing && editingTransaction?.id === transaction.id
+                          ? "border-indigo-200/90 bg-white/82 shadow-[0_24px_40px_-32px_rgba(99,102,241,0.28)] dark:border-indigo-400/40 dark:bg-slate-950/70"
+                          : null
+                      )}
+                      style={
+                        {
+                          "--transaction-enter-delay": `${Math.min(index * 45, 320)}ms`,
+                        } as React.CSSProperties
+                      }
+                      onClick={() => openEditorForTransaction(transaction)}
+                      onKeyDown={(event) =>
+                        handleTransactionCardKeyDown(event, transaction)
+                      }
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <div
@@ -543,6 +812,14 @@ export function DashboardPage() {
                             {transaction.recurrenceGroupId ? (
                               <Badge variant="secondary" className="font-mono text-[10px] tracking-[0.14em] uppercase">
                                 Recorrente
+                              </Badge>
+                            ) : null}
+                            {isEditing && editingTransaction?.id === transaction.id ? (
+                              <Badge
+                                variant="outline"
+                                className="border-indigo-200/80 bg-indigo-50/85 text-[10px] tracking-[0.14em] uppercase text-indigo-700 dark:border-indigo-400/35 dark:bg-indigo-500/10 dark:text-indigo-200"
+                              >
+                                Em edição
                               </Badge>
                             ) : null}
                           </div>
@@ -589,7 +866,10 @@ export function DashboardPage() {
                           size="icon-sm"
                           className="text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
                           aria-label={`Excluir ${transaction.description}`}
-                          onClick={() => setTransactionToDelete(transaction)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleRequestDelete(transaction)
+                          }}
                         >
                           <Trash2Icon data-icon="inline-end" />
                         </Button>
@@ -603,12 +883,15 @@ export function DashboardPage() {
             <aside className="hidden lg:block">
               <div className="glass-card sticky top-6 rounded-[24px] border-white/55 p-5 dark:border-slate-700/70 dark:bg-slate-950/55">
                 <TransactionEntryForm
+                  editorMode={isEditing ? "edit" : "create"}
                   errorMessage={formError}
                   filteredCategories={filteredCategories}
                   formState={normalizedFormState}
-                  isSubmitting={isCreating}
+                  isRecurringEdit={Boolean(editingTransaction?.recurrenceGroupId)}
+                  isSubmitting={isSubmitting}
                   monthLabel={loaderData.monthLabel}
-                  onSubmit={handleCreateTransactions}
+                  onResetEditor={() => resetToCreateEditor()}
+                  onSubmit={handleSubmitTransactions}
                   onValueChange={updateFormField}
                 />
               </div>
@@ -619,33 +902,38 @@ export function DashboardPage() {
 
       <Drawer
         open={drawerOpen}
-        onOpenChange={(open) => {
-          setDrawerOpen(open)
-          if (!open) {
-            setFormError(null)
-          }
-        }}
+        onOpenChange={handleDrawerOpenChange}
       >
         <DrawerTrigger asChild>
-          <Button className="dashboard-fab fixed right-5 bottom-5 z-40 size-14 rounded-full lg:hidden">
+          <Button
+            className="dashboard-fab fixed right-5 bottom-5 z-40 size-14 rounded-full lg:hidden"
+            onClick={() => resetToCreateEditor()}
+          >
             <PlusIcon />
           </Button>
         </DrawerTrigger>
-        <DrawerContent className="bg-white/98 dark:bg-slate-950/98">
+        <DrawerContent className="bg-white/98 dark:bg-slate-950/98 lg:hidden">
           <DrawerHeader>
-            <DrawerTitle>Novo lançamento</DrawerTitle>
+            <DrawerTitle>
+              {isEditing ? "Editar lançamento" : "Novo lançamento"}
+            </DrawerTitle>
             <DrawerDescription>
-              Crie entradas ou saídas reais em lote, mantendo o mês dirigido pela URL e a recorrência agrupada no mesmo envio.
+              {isEditing
+                ? "Ajuste o lançamento selecionado e deixe a escolha de alcance para a etapa seguinte quando ele fizer parte de uma recorrência."
+                : "Crie entradas ou saídas reais em lote, mantendo o mês dirigido pela URL e a recorrência agrupada no mesmo envio."}
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-5">
             <TransactionEntryForm
+              editorMode={isEditing ? "edit" : "create"}
               errorMessage={formError}
               filteredCategories={filteredCategories}
               formState={normalizedFormState}
-              isSubmitting={isCreating}
+              isRecurringEdit={Boolean(editingTransaction?.recurrenceGroupId)}
+              isSubmitting={isSubmitting}
               monthLabel={loaderData.monthLabel}
-              onSubmit={handleCreateTransactions}
+              onResetEditor={() => resetToCreateEditor()}
+              onSubmit={handleSubmitTransactions}
               onValueChange={updateFormField}
             />
           </div>
@@ -653,23 +941,82 @@ export function DashboardPage() {
       </Drawer>
 
       <AlertDialog
-        open={Boolean(transactionToDelete)}
+        open={Boolean(scopeRequest)}
         onOpenChange={(open) => {
           if (!open) {
-            setTransactionToDelete(null)
+            setScopeRequest(null)
           }
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="glass-card border-white/70 bg-white/95 shadow-[0_26px_60px_-36px_rgba(15,23,42,0.5)] dark:border-slate-700/75 dark:bg-slate-950/90">
           <AlertDialogHeader>
-            <AlertDialogMedia className="bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
+            <AlertDialogMedia className="bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-200">
+              <CalendarDaysIcon />
+            </AlertDialogMedia>
+            <AlertDialogTitle>
+              {scopeRequest?.action === "save"
+                ? "Como aplicar esta edição?"
+                : "Qual alcance você quer excluir?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {getScopeRequestDescription(scopeRequest)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_1fr_1fr]">
+            <AlertDialogCancel disabled={pendingIntent !== null}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="outline"
+              disabled={pendingIntent !== null}
+              onClick={() => {
+                if (scopeRequest?.action === "save") {
+                  void handleScopeSave("single")
+                  return
+                }
+
+                handleScopeDelete("single")
+              }}
+            >
+              Apenas este lançamento
+            </AlertDialogAction>
+            <AlertDialogAction
+              disabled={pendingIntent !== null}
+              onClick={() => {
+                if (scopeRequest?.action === "save") {
+                  void handleScopeSave("this-and-future")
+                  return
+                }
+
+                handleScopeDelete("this-and-future")
+              }}
+            >
+              Este e os futuros
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(deleteConfirmation)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmation(null)
+          }
+        }}
+      >
+        <AlertDialogContent className="glass-card border-white/70 bg-white/95 shadow-[0_26px_60px_-36px_rgba(15,23,42,0.5)] dark:border-slate-700/75 dark:bg-slate-950/90">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-200">
               <Trash2Icon />
             </AlertDialogMedia>
-            <AlertDialogTitle>Excluir lançamento permanentemente?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {deleteConfirmation?.scope === "this-and-future"
+                ? "Excluir este lançamento e os futuros?"
+                : "Excluir lançamento permanentemente?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {transactionToDelete
-                ? `"${transactionToDelete.description}" será removido com hard delete. Essa ação não tem desfazer e já impacta os totais do mês imediatamente.`
-                : "Confirme a exclusão permanente deste lançamento."}
+              {getDeleteConfirmationDescription(deleteConfirmation)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -677,12 +1024,22 @@ export function DashboardPage() {
             <AlertDialogAction
               variant="destructive"
               disabled={isDeleting}
-              onClick={(event) => {
-                void handleConfirmDelete(event)
+              onClick={() => {
+                if (!deleteConfirmation) {
+                  return
+                }
+
+                void runDelete(
+                  deleteConfirmation.transaction,
+                  deleteConfirmation.scope
+                )
               }}
             >
               {isDeleting ? (
-                <LoaderCircleIcon data-icon="inline-start" className="animate-spin" />
+                <LoaderCircleIcon
+                  data-icon="inline-start"
+                  className="animate-spin"
+                />
               ) : (
                 <Trash2Icon data-icon="inline-start" />
               )}
@@ -766,11 +1123,14 @@ function BalanceMetricCard({ value }: { value: number }) {
 }
 
 type TransactionEntryFormProps = {
+  editorMode: EditorMode
   errorMessage: string | null
   filteredCategories: FinanceCategory[]
   formState: TransactionFormState
+  isRecurringEdit: boolean
   isSubmitting: boolean
   monthLabel: string
+  onResetEditor: () => void
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
   onValueChange: <Key extends keyof TransactionFormState>(
     field: Key,
@@ -779,27 +1139,63 @@ type TransactionEntryFormProps = {
 }
 
 function TransactionEntryForm({
+  editorMode,
   errorMessage,
   filteredCategories,
   formState,
+  isRecurringEdit,
   isSubmitting,
   monthLabel,
+  onResetEditor,
   onSubmit,
   onValueChange,
 }: TransactionEntryFormProps) {
+  const isEditMode = editorMode === "edit"
+
   return (
     <form className="flex flex-col gap-5" onSubmit={onSubmit}>
-      <div className="flex items-center gap-2.5">
-        <div className="size-2 rounded-full bg-indigo-500" />
-        <h3 className="text-sm font-semibold tracking-tight text-slate-800 dark:text-slate-100">
-          Novo lançamento
-        </h3>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div
+            className={cn(
+              "size-2 rounded-full",
+              isEditMode ? "bg-amber-500" : "bg-indigo-500"
+            )}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-tight text-slate-800 dark:text-slate-100">
+              {isEditMode ? "Editar lançamento" : "Novo lançamento"}
+            </h3>
+            {isRecurringEdit ? (
+              <Badge
+                variant="outline"
+                className="border-slate-200/80 bg-white/80 text-[10px] tracking-[0.14em] uppercase text-slate-600 dark:border-slate-700/80 dark:bg-slate-950/60 dark:text-slate-200"
+              >
+                Recorrente
+              </Badge>
+            ) : null}
+          </div>
+        </div>
+
+        {isEditMode ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={onResetEditor}
+          >
+            <PlusIcon data-icon="inline-start" />
+            Novo
+          </Button>
+        ) : null}
       </div>
 
       <FieldSet>
         <FieldLegend>Dados do lançamento</FieldLegend>
         <FieldDescription>
-          O envio respeita o mês da competência, filtra categorias pelo tipo e permite repetir parcelas futuras no mesmo lote.
+          {isEditMode
+            ? "Ajuste o lançamento selecionado. Se ele fizer parte de uma recorrência, a escolha entre apenas este item ou daqui para frente acontece na próxima etapa."
+            : "O envio respeita o mês aberto, filtra categorias pelo tipo, permite repetir parcelas futuras e reaproveita o último tipo e meio salvos com sucesso."}
         </FieldDescription>
         <FieldGroup>
           <Field>
@@ -894,29 +1290,33 @@ function TransactionEntryForm({
                 onChange={(event) => onValueChange("occurredOn", event.target.value)}
               />
               <FieldDescription>
-                O mês exibido hoje é {monthLabel}.
+                {isEditMode && isRecurringEdit
+                  ? "Se você escolher 'este e os futuros', cada parcela preserva a própria data atual."
+                  : `O mês exibido hoje é ${monthLabel}.`}
               </FieldDescription>
             </Field>
 
-            <Field>
-              <FieldLabel htmlFor="transaction-repeat-months">
-                Repetir por X meses
-              </FieldLabel>
-              <Input
-                id="transaction-repeat-months"
-                name="repeatMonths"
-                type="number"
-                min="1"
-                step="1"
-                value={formState.repeatMonths}
-                onChange={(event) =>
-                  onValueChange("repeatMonths", event.target.value)
-                }
-              />
-              <FieldDescription>
-                Se for maior que 1, o cliente gera o lote com o mesmo grupo de recorrência.
-              </FieldDescription>
-            </Field>
+            {!isEditMode ? (
+              <Field>
+                <FieldLabel htmlFor="transaction-repeat-months">
+                  Repetir por X meses
+                </FieldLabel>
+                <Input
+                  id="transaction-repeat-months"
+                  name="repeatMonths"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={formState.repeatMonths}
+                  onChange={(event) =>
+                    onValueChange("repeatMonths", event.target.value)
+                  }
+                />
+                <FieldDescription>
+                  Se for maior que 1, o cliente gera o lote com o mesmo grupo de recorrência e já numera as parcelas automaticamente.
+                </FieldDescription>
+              </Field>
+            ) : null}
           </div>
 
           <Field>
@@ -950,24 +1350,81 @@ function TransactionEntryForm({
       <Button className="dashboard-cta w-full" disabled={isSubmitting} type="submit">
         {isSubmitting ? (
           <LoaderCircleIcon data-icon="inline-start" className="animate-spin" />
+        ) : isEditMode ? (
+          <CalendarDaysIcon data-icon="inline-start" />
         ) : (
           <PlusIcon data-icon="inline-start" />
         )}
-        {isSubmitting ? "Salvando lançamentos..." : "Salvar lançamento"}
+        {isSubmitting
+          ? isEditMode
+            ? "Salvando edição..."
+            : "Salvando lançamentos..."
+          : isEditMode
+            ? "Salvar alterações"
+            : "Salvar lançamento"}
       </Button>
     </form>
   )
 }
 
-function createTransactionFormState(month: string): TransactionFormState {
+function createTransactionFormState(
+  month: string,
+  defaults: TransactionCreateDefaults = DEFAULT_CREATE_DEFAULTS
+): TransactionFormState {
   return {
     amount: "",
     categoryId: "",
     description: "",
     occurredOn: getDefaultOccurredOn(month),
-    paymentMethod: "cash",
+    paymentMethod: defaults.paymentMethod,
     repeatMonths: "1",
-    transactionType: "out",
+    transactionType: defaults.transactionType,
+  }
+}
+
+function createEditTransactionFormState(
+  transaction: FinanceTransaction
+): TransactionFormState {
+  return {
+    amount: String(transaction.amount),
+    categoryId: transaction.categoryId ?? "",
+    description: transaction.description,
+    occurredOn: transaction.occurredOn,
+    paymentMethod: transaction.paymentMethod,
+    repeatMonths: "1",
+    transactionType: transaction.transactionType,
+  }
+}
+
+function buildUpdateTransactionInput(
+  formState: TransactionFormState
+): UpdateTransactionInput {
+  const description = formState.description.trim()
+  const amount = Number(formState.amount)
+
+  if (description.length < 3) {
+    throw new Error("A descrição precisa ter pelo menos 3 caracteres.")
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Informe um valor maior que zero.")
+  }
+
+  if (!formState.categoryId) {
+    throw new Error("Selecione uma categoria antes de salvar.")
+  }
+
+  if (!formState.occurredOn) {
+    throw new Error("Informe a data do lançamento.")
+  }
+
+  return {
+    amount,
+    categoryId: formState.categoryId,
+    description,
+    occurredOn: formState.occurredOn,
+    paymentMethod: formState.paymentMethod,
+    transactionType: formState.transactionType,
   }
 }
 
@@ -1024,48 +1481,42 @@ function buildRecurringTransactions(
   formState: TransactionFormState,
   workspaceId: string
 ) {
-  const description = formState.description.trim()
-  const amount = Number(formState.amount)
+  const values = buildUpdateTransactionInput(formState)
   const repeatMonths = Math.max(1, Number.parseInt(formState.repeatMonths, 10) || 1)
-
-  if (description.length < 3) {
-    throw new Error("A descrição precisa ter pelo menos 3 caracteres.")
-  }
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    throw new Error("Informe um valor maior que zero.")
-  }
-
-  if (!formState.categoryId) {
-    throw new Error("Selecione uma categoria antes de salvar.")
-  }
-
-  if (!formState.occurredOn) {
-    throw new Error("Informe a data do lançamento.")
-  }
 
   const recurrenceGroupId = repeatMonths > 1 ? crypto.randomUUID() : null
 
   return Array.from({ length: repeatMonths }, (_, index) => ({
-    amount,
-    categoryId: formState.categoryId,
-    description,
-    occurredOn: addMonthsToOccurredOn(formState.occurredOn, index),
-    paymentMethod: formState.paymentMethod,
+    amount: values.amount,
+    categoryId: values.categoryId,
+    description:
+      repeatMonths > 1
+        ? formatInstallmentDescription(values.description, index + 1, repeatMonths)
+        : values.description,
+    occurredOn: addMonthsToOccurredOn(values.occurredOn, index),
+    paymentMethod: values.paymentMethod,
     recurrenceGroupId,
-    transactionType: formState.transactionType,
+    transactionType: values.transactionType,
     workspaceId,
   }))
 }
 
+type NormalizeFormStateOptions = {
+  filteredCategories: FinanceCategory[]
+  mode: EditorMode
+  month: string
+}
+
 function normalizeFormState(
   formState: TransactionFormState,
-  month: string,
-  filteredCategories: FinanceCategory[]
+  { filteredCategories, mode, month }: NormalizeFormStateOptions
 ): TransactionFormState {
-  const nextOccurredOn = formState.occurredOn.startsWith(month)
-    ? formState.occurredOn
-    : getDefaultOccurredOn(month)
+  const nextOccurredOn =
+    mode === "create"
+      ? formState.occurredOn.startsWith(month)
+        ? formState.occurredOn
+        : getDefaultOccurredOn(month)
+      : formState.occurredOn || getDefaultOccurredOn(month)
   const nextCategoryId = filteredCategories.some(
     (category) => category.id === formState.categoryId
   )
@@ -1103,6 +1554,39 @@ function resolveCategoryName(
 function formatOccurredOn(date: string) {
   const [year, month, day] = date.split("-").map(Number)
   return OCCURRED_ON_FORMATTER.format(new Date(Date.UTC(year, month - 1, day)))
+}
+
+function shouldUseMobileDrawer() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 1023px)").matches
+  )
+}
+
+function getScopeRequestDescription(scopeRequest: ScopeRequestState | null) {
+  if (!scopeRequest) {
+    return "Escolha como aplicar esta ação na recorrência."
+  }
+
+  if (scopeRequest.action === "save") {
+    return `"${scopeRequest.transaction.description}" faz parte de uma recorrência. Escolha se a edição vale só para este lançamento ou do item clicado em diante. No modo futuros, as datas já existentes de cada parcela são preservadas.`
+  }
+
+  return `"${scopeRequest.transaction.description}" faz parte de uma recorrência. Escolha se a exclusão vale só para este lançamento ou desta parcela em diante a partir de ${formatOccurredOn(scopeRequest.transaction.occurredOn)}. A confirmação final acontece na próxima etapa.`
+}
+
+function getDeleteConfirmationDescription(
+  deleteConfirmation: DeleteConfirmationState | null
+) {
+  if (!deleteConfirmation) {
+    return "Confirme a exclusão permanente deste lançamento."
+  }
+
+  if (deleteConfirmation.scope === "this-and-future") {
+    return `"${deleteConfirmation.transaction.description}" e as parcelas futuras do mesmo grupo, a partir de ${formatOccurredOn(deleteConfirmation.transaction.occurredOn)}, serão removidos com hard delete. Essa ação não tem desfazer e impacta os totais imediatamente.`
+  }
+
+  return `"${deleteConfirmation.transaction.description}" será removido com hard delete. Essa ação não tem desfazer e já impacta os totais do mês imediatamente.`
 }
 
 export default DashboardPage

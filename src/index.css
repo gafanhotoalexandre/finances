@@ -239,7 +239,13 @@
 
 @utility animate-enter {
   opacity: 0;
-  animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@utility animate-transaction-row {
+  opacity: 0;
+  animation: slideUpFade 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--transaction-enter-delay, 0ms);
 }
 
 @keyframes float {
@@ -267,6 +273,18 @@
 
   100% {
     transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

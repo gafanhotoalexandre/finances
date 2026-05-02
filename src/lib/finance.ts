@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase"
 export type TransactionType = "in" | "out"
 export type CategoryScope = TransactionType | "both"
 export type PaymentMethod = "credit_card" | "debit" | "pix" | "cash"
+export type TransactionMutationScope = "single" | "this-and-future"
 
 export type FinanceCategory = {
   id: string
@@ -50,6 +51,26 @@ export type CreateTransactionInput = {
   workspaceId: string
 }
 
+export type UpdateTransactionInput = {
+  amount: number
+  categoryId: string
+  description: string
+  occurredOn: string
+  paymentMethod: PaymentMethod
+  transactionType: TransactionType
+}
+
+export type DeleteTransactionInput = {
+  scope: TransactionMutationScope
+  targetOccurredOn: string
+  targetRecurrenceGroupId: string | null
+  transactionId: string
+}
+
+export type UpdateTransactionArgs = DeleteTransactionInput & {
+  values: UpdateTransactionInput
+}
+
 type CategoryRow = {
   id: string
   is_system: boolean
@@ -70,8 +91,15 @@ type TransactionRow = {
   transaction_type: TransactionType
 }
 
+type MutationTransactionRow = {
+  description: string
+  id: string
+  occurred_on: string
+}
+
 const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/
 const APP_TIME_ZONE = "America/Sao_Paulo"
+const INSTALLMENT_SUFFIX_PATTERN = /\s+\(\d+\/\d+\)$/
 
 const APP_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
@@ -149,6 +177,19 @@ export function addMonthsToOccurredOn(dateString: string, delta: number) {
   return toIsoDate(targetYear, normalizedMonthIndex, clampedDay)
 }
 
+export function formatInstallmentDescription(
+  description: string,
+  installmentNumber: number,
+  installmentTotal: number
+) {
+  const trimmedDescription = description.trim()
+  const baseDescription = stripInstallmentSuffix(trimmedDescription).trim()
+  const normalizedDescription =
+    baseDescription.length > 0 ? baseDescription : trimmedDescription
+
+  return `${normalizedDescription} (${installmentNumber}/${installmentTotal})`
+}
+
 export async function getDashboardData(month: string) {
   const { endDate, startDate } = getMonthBounds(month)
 
@@ -214,11 +255,63 @@ export async function createTransactions(entries: CreateTransactionInput[]) {
   }
 }
 
-export async function deleteTransaction(transactionId: string) {
-  const { error } = await supabase
-    .from("transactions")
-    .delete()
-    .eq("id", transactionId)
+export async function updateTransaction({
+  scope,
+  targetOccurredOn,
+  targetRecurrenceGroupId,
+  transactionId,
+  values,
+}: UpdateTransactionArgs) {
+  const targets = await getTransactionsForMutation({
+    scope,
+    targetOccurredOn,
+    targetRecurrenceGroupId,
+    transactionId,
+  })
+
+  if (targets.length === 0) {
+    throw new Error("TRANSACTION_NOT_FOUND")
+  }
+
+  await Promise.all(
+    targets.map(async (target) => {
+      const payload = {
+        amount: values.amount,
+        category_id: values.categoryId,
+        description: mergeInstallmentSuffix(values.description, target.description),
+        occurred_on: scope === "single" ? values.occurredOn : target.occurred_on,
+        payment_method: values.paymentMethod,
+        transaction_type: values.transactionType,
+      }
+
+      const { error } = await supabase
+        .from("transactions")
+        .update(payload)
+        .eq("id", target.id)
+
+      if (error) {
+        throw error
+      }
+    })
+  )
+}
+
+export async function deleteTransaction({
+  scope,
+  targetOccurredOn,
+  targetRecurrenceGroupId,
+  transactionId,
+}: DeleteTransactionInput) {
+  const query =
+    scope === "this-and-future" && targetRecurrenceGroupId
+      ? supabase
+          .from("transactions")
+          .delete()
+          .eq("recurrence_group_id", targetRecurrenceGroupId)
+          .gte("occurred_on", targetOccurredOn)
+      : supabase.from("transactions").delete().eq("id", transactionId)
+
+  const { error } = await query
 
   if (error) {
     throw error
@@ -314,6 +407,66 @@ function mapTransactionRow(row: TransactionRow): FinanceTransaction {
     recurrenceGroupId: row.recurrence_group_id,
     transactionType: row.transaction_type,
   }
+}
+
+async function getTransactionsForMutation({
+  scope,
+  targetOccurredOn,
+  targetRecurrenceGroupId,
+  transactionId,
+}: DeleteTransactionInput) {
+  if (scope === "this-and-future" && targetRecurrenceGroupId) {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("id, description, occurred_on")
+      .eq("recurrence_group_id", targetRecurrenceGroupId)
+      .gte("occurred_on", targetOccurredOn)
+      .order("occurred_on", { ascending: true })
+      .order("created_at", { ascending: true })
+
+    if (error) {
+      throw error
+    }
+
+    return (data ?? []) as MutationTransactionRow[]
+  }
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("id, description, occurred_on")
+    .eq("id", transactionId)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return data ? [data as MutationTransactionRow] : []
+}
+
+function stripInstallmentSuffix(description: string) {
+  return description.replace(INSTALLMENT_SUFFIX_PATTERN, "")
+}
+
+function extractInstallmentSuffix(description: string) {
+  return description.match(INSTALLMENT_SUFFIX_PATTERN)?.[0]?.trim() ?? null
+}
+
+function mergeInstallmentSuffix(nextDescription: string, currentDescription: string) {
+  const trimmedNextDescription = nextDescription.trim()
+  const currentSuffix = extractInstallmentSuffix(currentDescription)
+
+  if (!currentSuffix) {
+    return trimmedNextDescription
+  }
+
+  const baseDescription = stripInstallmentSuffix(trimmedNextDescription).trim()
+
+  if (baseDescription.length === 0) {
+    return trimmedNextDescription
+  }
+
+  return `${baseDescription} ${currentSuffix}`
 }
 
 function filterTransactionsByMonth(
