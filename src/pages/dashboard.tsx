@@ -279,17 +279,9 @@ export function DashboardPage() {
   const activePaymentMethod =
     paymentMethodFilter === "all" ? null : paymentMethodFilter
 
-  React.useEffect(() => {
-    if (editorMode === "edit" && !editingTransaction) {
-      setDrawerOpen(false)
-      setEditorMode("create")
-      setEditingTransactionId(null)
-      setFormError(null)
-      setFormState(createTransactionFormState(dashboardData.month, smartDefaults))
-    }
-  }, [dashboardData.month, editorMode, editingTransaction, smartDefaults])
-
   function handleMonthChange(nextMonth: string) {
+    resetToCreateEditor({ closeDrawer: true })
+
     startMonthTransition(() => {
       const nextSearchParams = new URLSearchParams(searchParams)
       nextSearchParams.set("month", nextMonth)
@@ -304,6 +296,7 @@ export function DashboardPage() {
     const nextDefaults = options?.defaults ?? smartDefaults
 
     setDeleteConfirmation(null)
+    setScopeRequest(null)
     setEditorMode("create")
     setEditingTransactionId(null)
     setFormError(null)
@@ -467,6 +460,11 @@ export function DashboardPage() {
     event.preventDefault()
     setFeedback(null)
     setFormError(null)
+
+    if (editorMode === "edit" && !editingTransaction) {
+      resetToCreateEditor()
+      return
+    }
 
     if (isEditing && editingTransaction) {
       let values
@@ -1203,7 +1201,7 @@ function TransactionEntryForm({
             <Input
               id="transaction-description"
               name="description"
-              placeholder="Ex: Gasolina da Factor"
+              placeholder="Ex: Fatura do Cartão de crédito"
               value={formState.description}
               onChange={(event) => onValueChange("description", event.target.value)}
             />
