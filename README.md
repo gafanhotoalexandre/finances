@@ -59,15 +59,14 @@ Arquivos relacionados:
 4. Confirme que `Confirm email` está desativado em `Authentication`.
 5. Rode `npm run dev`.
 
-## Validação rápida da v0.4.3
+## Validação rápida da v0.4.0
 
 1. Entre em `/reservas` com um workspace autenticado.
-2. Recarregue a aplicação com o console aberto e confirme que o `HydrateFallback` aparece como uma splash centralizada com `SYS::FINANCE`, ícone animado e fundo coerente com light/dark mode.
-3. No mobile, abra `/login` e confirme que o formulário aparece primeiro na dobra, enquanto o bloco `SYS::FINANCE` fica reduzido e abaixo do card, sem competir com a ação principal.
-4. Em `/dashboard`, abra o drawer/painel de transação e digite o valor apenas com números. Confirme a máscara dinâmica em BRL (`1.234,50`) e que o save continua funcionando normalmente.
-5. Em `/reservas`, teste tanto a `Meta opcional` quanto o drawer `Guardar dinheiro`, confirmando a mesma máscara monetária controlada e o feedback de sucesso após criar reserva/aporte.
-6. Depois de um aporte, volte para `/dashboard` e confirme que a saída criada segue imutável, fora do seletor manual de categoria `Reserva` e consistente com o valor mascarado digitado.
-7. Em `/admin`, confirme que o histórico deixa de truncar em 5 itens e continua ordenado do convite mais recente para o mais antigo.
+2. Crie uma reserva com apenas `nome` e confirme que o card nasce com `R$ 0,00`, sem meta e sem histórico.
+3. Crie outra reserva com `nome` e `meta`, e confirme que o card mostra `targetAmount`, barra de progresso e valor restante.
+4. Dentro do card, use `Guardar dinheiro` com `amount`, `occurredOn` e `description`, e confirme o feedback de sucesso.
+5. Reabra `/dashboard` no mesmo workspace e confirme que o aporte virou uma saída real na categoria de reserva.
+6. Volte para `/reservas` e confirme que `currentAmount`, `lastEntryOn` e o progresso foram atualizados após a revalidação.
 
 ## Validação rápida da v0.3.0
 
@@ -170,8 +169,3 @@ Importante: essa migração é destrutiva para os dados dessas tabelas. Use em a
 - cards das caixinhas com valor atual, meta, progresso e último aporte
 - fluxo `Guardar dinheiro` conectado à RPC `allocate_to_reserve(...)`
 - revalidação local após criar reserva e após cada novo aporte
-- trava de segurança no dashboard para impedir edição/exclusão de lançamentos da categoria de sistema `Reserva`
-- mobile de `/reservas` com lista priorizada e composer deslocado para Drawer sob demanda
-- categoria de sistema `Reserva` removida da seleção manual do dashboard
-- AppLayout com barra de progresso superior e fade do conteúdo durante navegação `loading`
-- `HydrateFallback` configurado no router raiz para eliminar o warning de hidratação
