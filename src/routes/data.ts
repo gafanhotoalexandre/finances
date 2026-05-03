@@ -158,7 +158,6 @@ export type AdminActionData = {
 const INVITE_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const INVITE_CODE_SEGMENT_LENGTH = 4
 const MAX_INVITE_CODE_ATTEMPTS = 6
-const ADMIN_INVITES_PAGE_WINDOW = 200
 const MIN_WORKSPACE_NAME_LENGTH = 3
 const MAX_WORKSPACE_NAME_LENGTH = 80
 
@@ -518,39 +517,13 @@ async function handleRevokeInviteAction(formData: FormData) {
 }
 
 async function getAdminInvites() {
-  const inviteRows: AdminInviteRow[] = []
-  let offset = 0
-  let totalCount: number | null = null
+  const { data, error } = await supabase.rpc("get_admin_invites_feed")
 
-  while (totalCount === null || inviteRows.length < totalCount) {
-    const { data, error, count } = await supabase
-      .from("invites")
-      .select(
-        "id, code, requested_role, status, expires_at, created_at, revoked_at, claimed_at, claimed_by, claimed_at_snapshot, claimed_by_snapshot, workspace_id, workspace_name",
-        { count: "exact" }
-      )
-      .order("created_at", { ascending: false })
-      .range(offset, offset + ADMIN_INVITES_PAGE_WINDOW - 1)
-
-    if (error) {
-      throw error
-    }
-
-    const pageRows = (data ?? []) as AdminInviteRow[]
-
-    if (totalCount === null) {
-      totalCount = count ?? null
-    }
-
-    if (pageRows.length === 0) {
-      break
-    }
-
-    inviteRows.push(...pageRows)
-    offset += pageRows.length
+  if (error) {
+    throw error
   }
 
-  return inviteRows.map(mapAdminInvite)
+  return ((data ?? []) as AdminInviteRow[]).map(mapAdminInvite)
 }
 
 async function createAdminInvite(

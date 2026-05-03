@@ -3,12 +3,9 @@ import { TerminalSquareIcon } from "lucide-react"
 import { createBrowserRouter } from "react-router"
 
 import App from "@/App"
-import AdminPage from "@/pages/admin"
 import AuthHandoffPage from "@/pages/auth-handoff"
-import DashboardPage from "@/pages/dashboard"
 import InviteActivatePage from "@/pages/invite-activate"
 import LoginPage from "@/pages/login"
-import ReservesPage from "@/pages/reserves"
 import NotFoundPage from "@/pages/not-found"
 import RouteErrorPage from "@/pages/route-error"
 import AppLayout from "@/routes/layouts/app-layout"
@@ -94,7 +91,13 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            Component: DashboardPage,
+            lazy: async () => {
+              const { DashboardPage } = await import("@/pages/dashboard")
+
+              return {
+                Component: DashboardPage,
+              }
+            },
           },
           {
             path: "sign-out",
@@ -110,7 +113,13 @@ export const router = createBrowserRouter([
             id: "reserves",
             index: true,
             loader: reservesLoader,
-            Component: ReservesPage,
+            lazy: async () => {
+              const { ReservesPage } = await import("@/pages/reserves")
+
+              return {
+                Component: ReservesPage,
+              }
+            },
           },
         ],
       },
@@ -123,7 +132,13 @@ export const router = createBrowserRouter([
             index: true,
             loader: adminLoader,
             action: adminAction,
-            Component: AdminPage,
+            lazy: async () => {
+              const { AdminPage } = await import("@/pages/admin")
+
+              return {
+                Component: AdminPage,
+              }
+            },
           },
         ],
       },

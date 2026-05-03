@@ -173,6 +173,7 @@ type AllocateToReserveRow = {
 
 const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/
 const APP_TIME_ZONE = "America/Sao_Paulo"
+const TRANSACTION_EXPORT_PAGE_WINDOW = 500
 const INSTALLMENT_SUFFIX_PATTERN = /\s+\(\d+\/\d+\)$/
 
 const APP_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat("en-CA", {
@@ -307,6 +308,42 @@ export async function getDashboardData(month: string) {
     summary: summarizeTransactions(allTransactions, startDate, endDate),
     transactions,
   } satisfies DashboardData
+}
+
+export async function getAllTransactionsForExport() {
+  const allTransactions: FinanceTransaction[] = []
+  let offset = 0
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select(
+        "id, description, transaction_type, payment_method, amount, occurred_on, notes, recurrence_group_id, category_id, created_at"
+      )
+      .order("occurred_on", { ascending: false })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + TRANSACTION_EXPORT_PAGE_WINDOW - 1)
+
+    if (error) {
+      throw error
+    }
+
+    const page = ((data ?? []) as TransactionRow[]).map(mapTransactionRow)
+
+    if (page.length === 0) {
+      break
+    }
+
+    allTransactions.push(...page)
+
+    if (page.length < TRANSACTION_EXPORT_PAGE_WINDOW) {
+      break
+    }
+
+    offset += page.length
+  }
+
+  return allTransactions
 }
 
 export async function createTransactions(entries: CreateTransactionInput[]) {

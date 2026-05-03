@@ -4,11 +4,11 @@ Project Finance é um app de fluxo de caixa pessoal com login simples, convites 
 
 ## Estado atual
 
-- v0.2.4 validada: sessão blindada entre Supabase, Zustand e React Router com a rota `/handoff`.
-- shell de auth refinada: linguagem mais humana, superfície mais limpa e fluxo sem estados intermediários falsos.
-- v0.2 encerrada: rota `/admin` com emissão, revogação e histórico administrativo de convites.
-- v0.3.2 validada: edição sem atrito no Dashboard com clique para editar, recorrência com escopo explícito, smart defaults e animações suaves na listagem.
-- v0.4.3 entregue: `HydrateFallback` virou splash nativa, inputs monetários agora usam máscara BRL no dashboard/cofre.
+- v0.5.0 entregue: shell autenticado mobile-first com top bar compacta, bottom nav fixa e perfil centralizado em dialog.
+- Dashboard agora exporta CSV do mês atual e do histórico completo diretamente pela interface.
+- Cofre ganhou separação entre reservas ativas e concluídas para reduzir ruído visual no mobile.
+- histórico administrativo passou a consumir a função `public.get_admin_invites_feed()`, removendo dependência de paginação defensiva no frontend.
+- páginas pesadas (`/dashboard`, `/reservas`, `/admin`) agora usam lazy loading no roteador para aliviar o bundle inicial.
 
 ## Stack
 
@@ -55,9 +55,19 @@ Arquivos relacionados:
 
 1. Rode `npm install`.
 2. Crie o `.env` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` reais.
-3. Aplique as migrations em `supabase/migrations/` no projeto Supabase, incluindo foundation, payment methods, snapshots de histórico, o módulo `20260502162824_v040_reserves_module.sql` e os ajustes de RLS para convites isolados.
+3. Aplique as migrations em `supabase/migrations/` no projeto Supabase, incluindo foundation, payment methods, snapshots de histórico, o módulo `20260502162824_v040_reserves_module.sql`, os ajustes de RLS para convites isolados e `20260503170000_admin_invites_feed_rpc.sql`.
 4. Confirme que `Confirm email` está desativado em `Authentication`.
 5. Rode `npm run dev`.
+
+## Validação rápida da v0.5.0
+
+1. Aplique a migration `supabase/migrations/20260503170000_admin_invites_feed_rpc.sql` no banco antes de abrir `/admin`.
+2. Abra `/dashboard` no celular e confirme top bar compacta, bottom nav fixa e FAB acima da navegação inferior.
+3. Toque no avatar/perfil e confirme que o dialog concentra apelido local, contexto da sessão e ação de logout.
+4. Ainda em `/dashboard`, use `Exportar CSV` para baixar o mês atual e o histórico completo, confirmando os dois arquivos.
+5. Abra `/reservas` no celular e confirme as abas `Ativas` e `Concluídas`, com cards mais compactos e sem poluição visual.
+6. Entre em `/admin` com vários convites e confirme que o histórico deixa de truncar em 5 itens.
+7. Rode `npm run typecheck`, `npm run lint` e `npm run build`.
 
 ## Validação rápida da v0.4.0
 
@@ -169,3 +179,12 @@ Importante: essa migração é destrutiva para os dados dessas tabelas. Use em a
 - cards das caixinhas com valor atual, meta, progresso e último aporte
 - fluxo `Guardar dinheiro` conectado à RPC `allocate_to_reserve(...)`
 - revalidação local após criar reserva e após cada novo aporte
+
+### v0.5
+
+- função SQL `public.get_admin_invites_feed()` para histórico administrativo sem gargalo oculto
+- shell mobile com top bar mínima, bottom nav fixa e logout movido para o dialog de perfil
+- apelido local por navegador para personalizar a experiência sem expandir escopo do backend
+- exportação CSV do dashboard para mês atual e histórico completo
+- abas de `Ativas` e `Concluídas` na página de reservas
+- lazy loading para `/dashboard`, `/reservas` e `/admin`

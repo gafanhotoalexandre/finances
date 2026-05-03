@@ -49,6 +49,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type FeedbackState = {
   kind: "error" | "success"
@@ -65,6 +66,8 @@ type ReserveAllocationFormState = {
   description: string
   occurredOn: string
 }
+
+type ReserveTabValue = "active" | "completed"
 
 type MetricAccent = "emerald" | "sky" | "slate"
 
@@ -104,6 +107,7 @@ export function ReservesPage() {
   const [selectedReserveId, setSelectedReserveId] = React.useState<string | null>(
     null
   )
+  const [reserveTab, setReserveTab] = React.useState<ReserveTabValue>("active")
   const [allocationDrawerOpen, setAllocationDrawerOpen] = React.useState(false)
   const [isCreating, setIsCreating] = React.useState(false)
   const [isAllocating, setIsAllocating] = React.useState(false)
@@ -114,11 +118,15 @@ export function ReservesPage() {
     (sum, reserve) => sum + reserve.currentAmount,
     0
   )
+  const completedReserves = loaderData.reserves.filter(isReserveCompleted)
+  const activeReserves = loaderData.reserves.filter(
+    (reserve) => !isReserveCompleted(reserve)
+  )
   const trackedTargets = loaderData.reserves.filter(
     (reserve) => reserve.targetAmount !== null
   )
-  const completedTargets = trackedTargets.filter(
-    (reserve) => (reserve.remainingAmount ?? 0) <= 0
+  const completedTargets = completedReserves.filter(
+    (reserve) => reserve.targetAmount !== null
   )
   const lastContributionOn = loaderData.reserves.reduce<string | null>(
     (latest, reserve) => {
@@ -343,10 +351,10 @@ export function ReservesPage() {
             />
             <ReserveMetricCard
               accent="sky"
-              helper="Reservas independentes monitoradas neste workspace."
+              helper="Caixinhas que ainda estão recebendo saldo ou ainda não bateram a meta."
               icon={PlusIcon}
               label="Caixinhas ativas"
-              value={String(loaderData.reserves.length)}
+              value={String(activeReserves.length)}
             />
             <ReserveMetricCard
               accent="emerald"
@@ -378,22 +386,6 @@ export function ReservesPage() {
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_360px] lg:gap-8">
             <section className="order-1 flex min-w-0 flex-col gap-3">
-              <div className="flex items-center justify-between gap-3 px-1">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                    Caixinhas
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Cada aporte cria uma saída real no dashboard e um crédito na
-                    reserva selecionada.
-                  </p>
-                </div>
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  {loaderData.reserves.length} registro
-                  {loaderData.reserves.length === 1 ? "" : "s"}
-                </span>
-              </div>
-
               {loaderData.reserves.length === 0 ? (
                 <Card className="glass-card rounded-[24px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55">
                   <CardHeader className="px-5 pt-5">
@@ -421,16 +413,79 @@ export function ReservesPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {loaderData.reserves.map((reserve, index) => (
-                    <ReserveCard
-                      key={reserve.id}
-                      index={index}
-                      onAllocate={openAllocationDrawer}
-                      reserve={reserve}
-                    />
-                  ))}
-                </div>
+                <Tabs
+                  value={reserveTab}
+                  onValueChange={(value) => setReserveTab(value as ReserveTabValue)}
+                  className="flex flex-col gap-3"
+                >
+                  <div className="flex flex-col gap-3 px-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        Caixinhas
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Cada aporte cria uma saída real no dashboard e um crédito na reserva selecionada.
+                      </p>
+                    </div>
+
+                    <TabsList>
+                      <TabsTrigger value="active">
+                        Ativas ({activeReserves.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="completed">
+                        Concluídas ({completedReserves.length})
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <TabsContent value="active">
+                    {activeReserves.length === 0 ? (
+                      <Card className="glass-card rounded-[24px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55">
+                        <CardHeader className="px-5 pt-5">
+                          <CardTitle>Nenhuma caixinha ativa.</CardTitle>
+                          <CardDescription>
+                            Quando uma meta for batida, ela aparece na aba de concluídas. Caixinhas sem meta continuam ativas para receber novos aportes.
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {activeReserves.map((reserve, index) => (
+                          <ReserveCard
+                            key={reserve.id}
+                            index={index}
+                            onAllocate={openAllocationDrawer}
+                            reserve={reserve}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="completed">
+                    {completedReserves.length === 0 ? (
+                      <Card className="glass-card rounded-[24px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55">
+                        <CardHeader className="px-5 pt-5">
+                          <CardTitle>Nenhuma meta concluída ainda.</CardTitle>
+                          <CardDescription>
+                            Assim que uma reserva com meta atingir ou ultrapassar o alvo, ela vai aparecer aqui para limpeza visual do fluxo principal.
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {completedReserves.map((reserve, index) => (
+                          <ReserveCard
+                            key={reserve.id}
+                            index={index}
+                            onAllocate={openAllocationDrawer}
+                            reserve={reserve}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               )}
             </section>
 
@@ -595,8 +650,8 @@ function ReserveMetricCard({
         : "bg-slate-100/85 text-slate-700 dark:bg-slate-800/85 dark:text-slate-200"
 
   return (
-    <Card className="glass-card rounded-[24px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55">
-      <CardHeader className="px-5 pt-5">
+    <Card className="glass-card rounded-[22px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55 sm:rounded-[24px]">
+      <CardHeader className="px-4 pt-4 sm:px-5 sm:pt-5">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <CardDescription className="text-[11px] font-medium tracking-[0.18em] uppercase text-slate-500 dark:text-slate-400">
@@ -611,7 +666,7 @@ function ReserveMetricCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="px-5 pb-5">
+      <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5">
         <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
           {helper}
         </p>
@@ -631,14 +686,14 @@ function ReserveCard({ index, onAllocate, reserve }: ReserveCardProps) {
 
   return (
     <Card
-      className="glass-card animate-transaction-row rounded-[24px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55"
+      className="glass-card animate-transaction-row rounded-[22px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55 sm:rounded-[24px]"
       style={
         {
           "--transaction-enter-delay": `${Math.min(index * 50, 320)}ms`,
         } as React.CSSProperties
       }
     >
-      <CardHeader className="px-5 pt-5">
+      <CardHeader className="px-4 pt-4 sm:px-5 sm:pt-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -664,19 +719,19 @@ function ReserveCard({ index, onAllocate, reserve }: ReserveCardProps) {
             </CardDescription>
           </div>
 
-          <div className="rounded-[20px] border border-white/60 bg-white/70 px-4 py-3 shadow-[0_18px_34px_-26px_rgba(15,23,42,0.35)] dark:border-slate-700/70 dark:bg-slate-950/60">
+          <div className="rounded-[18px] border border-white/60 bg-white/70 px-3.5 py-3 shadow-[0_18px_34px_-26px_rgba(15,23,42,0.35)] dark:border-slate-700/70 dark:bg-slate-950/60 sm:rounded-[20px] sm:px-4">
             <div className="flex items-center gap-2 text-[10px] font-medium tracking-[0.2em] uppercase text-slate-500 dark:text-slate-400">
               <WalletIcon className="size-3.5" />
               Guardado
             </div>
-            <div className="mt-2 text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-50">
+            <div className="mt-2 text-lg font-semibold tracking-tight text-slate-800 sm:text-xl dark:text-slate-50">
               {formatCurrency(reserve.currentAmount)}
             </div>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4 px-5 pb-5">
+      <CardContent className="flex flex-col gap-4 px-4 pb-4 sm:px-5 sm:pb-5">
         {progressPercentage === null ? (
           <div className="rounded-2xl border border-dashed border-slate-300/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-600 dark:border-slate-600/60 dark:bg-slate-900/40 dark:text-slate-300">
             Meta livre. Esta caixinha acompanha apenas o saldo acumulado até aqui.
@@ -737,7 +792,7 @@ function ReserveCard({ index, onAllocate, reserve }: ReserveCardProps) {
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <div className="hidden items-center gap-2 text-xs text-slate-500 dark:text-slate-400 sm:flex">
             <CalendarDaysIcon className="size-4" />
             <span>As datas do cofre ficam reconciliadas com o dashboard.</span>
           </div>
@@ -770,7 +825,7 @@ type ReserveComposerFormProps = {
 
 function ReserveFact({ label, value }: ReserveFactProps) {
   return (
-    <div className="rounded-2xl border border-white/60 bg-white/68 px-3.5 py-3 dark:border-slate-700/70 dark:bg-slate-950/58">
+    <div className="rounded-[18px] border border-white/60 bg-white/68 px-3.5 py-3 dark:border-slate-700/70 dark:bg-slate-950/58 sm:rounded-2xl">
       <div className="text-[10px] font-medium tracking-[0.2em] uppercase text-slate-500 dark:text-slate-400">
         {label}
       </div>
@@ -864,6 +919,10 @@ function createReserveAllocationFormState(
     description: reserveName ? `Aporte para ${reserveName}` : "",
     occurredOn: getCurrentOccurredOn(),
   }
+}
+
+function isReserveCompleted(reserve: ReserveSummary) {
+  return reserve.targetAmount !== null && (reserve.remainingAmount ?? 0) <= 0
 }
 
 function formatCurrency(value: number) {

@@ -1,4 +1,4 @@
-import { Form, Link, useActionData, useLoaderData, useNavigation } from "react-router"
+import { Form, useActionData, useLoaderData, useNavigation } from "react-router"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -102,14 +102,6 @@ export function LoginPage() {
             {isSubmitting ? "Entrando..." : "Entrar"}
           </Button>
         </Form>
-
-        <div className="rounded-[22px] border border-slate-200/80 bg-white/72 px-4 py-4 text-sm text-slate-500 dark:border-slate-700/70 dark:bg-slate-950/45 dark:text-slate-400">
-          <span className="block">Já recebeu um convite?</span>
-          <span>
-            Abra o link enviado pela pessoa que administra seu workspace. Se
-            quiser recomeçar do início, volte para a <Link className="underline underline-offset-4 hover:text-foreground" to="/">página inicial</Link>.
-          </span>
-        </div>
       </CardContent>
     </Card>
   )

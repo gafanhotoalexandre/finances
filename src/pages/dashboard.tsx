@@ -10,6 +10,8 @@ import {
   ArrowUpRightIcon,
   CalendarDaysIcon,
   Clock3Icon,
+  DownloadIcon,
+  FileSpreadsheetIcon,
   LockIcon,
   LoaderCircleIcon,
   MinusIcon,
@@ -25,6 +27,7 @@ import {
   deleteTransaction,
   formatInstallmentDescription,
   formatMonthLabel,
+  getAllTransactionsForExport,
   getCurrentAppYear,
   getCurrentMonthParam,
   getCurrentOccurredOn,
@@ -67,6 +70,14 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Field,
   FieldDescription,
@@ -120,6 +131,8 @@ type MonthOption = {
   label: string
   value: string
 }
+
+type ExportScope = "history" | "month"
 
 type TransactionFormState = {
   amount: string
@@ -218,6 +231,7 @@ export function DashboardPage() {
   const [pendingIntent, setPendingIntent] = React.useState<PendingIntent>(null)
   const [paymentMethodFilter, setPaymentMethodFilter] =
     React.useState<PaymentMethodFilter>("all")
+  const [exportScope, setExportScope] = React.useState<ExportScope | null>(null)
   const [scopeRequest, setScopeRequest] =
     React.useState<ScopeRequestState | null>(null)
   const [deleteConfirmation, setDeleteConfirmation] =
@@ -284,6 +298,7 @@ export function DashboardPage() {
   const isRevalidating = revalidator.state !== "idle"
   const isSubmitting = pendingIntent === "create" || pendingIntent === "update"
   const isDeleting = pendingIntent === "delete"
+  const isExporting = exportScope !== null
   const activePaymentMethod =
     paymentMethodFilter === "all" ? null : paymentMethodFilter
 
@@ -590,6 +605,48 @@ export function DashboardPage() {
     openEditorForTransaction(transaction)
   }
 
+  async function handleExportTransactions(scope: ExportScope) {
+    setFeedback(null)
+    setExportScope(scope)
+
+    try {
+      const transactions =
+        scope === "month"
+          ? dashboardData.transactions
+          : await getAllTransactionsForExport()
+
+      const csvContent = buildTransactionsCsv(
+        transactions,
+        dashboardData.categories
+      )
+
+      downloadCsvFile(
+        scope === "month"
+          ? `project-finance-${dashboardData.month}.csv`
+          : "project-finance-historico.csv",
+        csvContent
+      )
+
+      setFeedback({
+        kind: "success",
+        message:
+          scope === "month"
+            ? `CSV de ${dashboardData.monthLabel} exportado com sucesso.`
+            : "CSV do histórico completo exportado com sucesso.",
+      })
+    } catch (error) {
+      setFeedback({
+        kind: "error",
+        message: getFriendlyErrorMessage(
+          error,
+          "Não foi possível exportar o CSV agora."
+        ),
+      })
+    } finally {
+      setExportScope(null)
+    }
+  }
+
   return (
     <>
       <section className="w-full min-w-0 rounded-[28px] py-4">
@@ -617,26 +674,82 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex w-full flex-col gap-1.5 sm:w-auto">
-              <span className="px-1 font-mono text-[10px] font-medium tracking-[0.2em] uppercase text-slate-500 dark:text-slate-400">
-                Mês
-              </span>
-              <div className="glass-card flex h-11 w-full items-center gap-2 rounded-2xl border-white/60 px-3 sm:w-55 dark:border-slate-700/75 dark:bg-slate-950/58">
-                <CalendarDaysIcon className="size-4 text-slate-500 dark:text-slate-300" />
-                <Select value={selectedMonthValue} onValueChange={handleMonthChange}>
-                  <SelectTrigger className="h-auto w-full border-0 bg-transparent px-0 py-0 pr-0 text-left shadow-none focus-visible:ring-0 dark:bg-transparent">
-                    <SelectValue placeholder={loaderData.monthLabel} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {monthOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+              <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-[220px_auto] sm:items-end">
+                <div className="flex w-full flex-col gap-1.5 sm:w-auto">
+                  <span className="px-1 font-mono text-[10px] font-medium tracking-[0.2em] uppercase text-slate-500 dark:text-slate-400">
+                    Mês
+                  </span>
+                  <div className="glass-card flex h-11 w-full items-center gap-2 rounded-2xl border-white/60 px-3 sm:w-55 dark:border-slate-700/75 dark:bg-slate-950/58">
+                    <CalendarDaysIcon className="size-4 text-slate-500 dark:text-slate-300" />
+                    <Select value={selectedMonthValue} onValueChange={handleMonthChange}>
+                      <SelectTrigger className="h-auto w-full border-0 bg-transparent px-0 py-0 pr-0 text-left shadow-none focus-visible:ring-0 dark:bg-transparent">
+                        <SelectValue placeholder={loaderData.monthLabel} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {monthOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 w-full rounded-2xl border-white/60 bg-white/65 sm:w-auto dark:border-slate-700/70 dark:bg-slate-950/58"
+                      disabled={isExporting}
+                    >
+                      {isExporting ? (
+                        <LoaderCircleIcon data-icon="inline-start" className="animate-spin" />
+                      ) : (
+                        <DownloadIcon data-icon="inline-start" />
+                      )}
+                      Exportar CSV
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[18rem]">
+                    <DropdownMenuLabel>Exportação</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      disabled={isExporting}
+                      onSelect={(event) => {
+                        event.preventDefault()
+                        void handleExportTransactions("month")
+                      }}
+                    >
+                      <FileSpreadsheetIcon className="size-4" />
+                      <div className="flex flex-col gap-0.5">
+                        <span>Exportar mês atual</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          Baixa todos os lançamentos de {loaderData.monthLabel}.
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={isExporting}
+                      onSelect={(event) => {
+                        event.preventDefault()
+                        void handleExportTransactions("history")
+                      }}
+                    >
+                      <DownloadIcon className="size-4" />
+                      <div className="flex flex-col gap-0.5">
+                        <span>Exportar histórico completo</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          Busca todo o ledger disponível para auditoria externa.
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </header>
@@ -972,7 +1085,7 @@ export function DashboardPage() {
       >
         <DrawerTrigger asChild>
           <Button
-            className="dashboard-fab fixed right-5 bottom-5 z-40 size-14 rounded-full lg:hidden"
+            className="dashboard-fab fixed right-5 bottom-24 z-40 size-14 rounded-full lg:hidden"
             onClick={() => resetToCreateEditor()}
           >
             <PlusIcon />
@@ -1622,6 +1735,59 @@ function resolveCategoryName(
 function formatOccurredOn(date: string) {
   const [year, month, day] = date.split("-").map(Number)
   return OCCURRED_ON_FORMATTER.format(new Date(Date.UTC(year, month - 1, day)))
+}
+
+function buildTransactionsCsv(
+  transactions: FinanceTransaction[],
+  categories: FinanceCategory[]
+) {
+  const rows = transactions.map((transaction) => {
+    const categoryName = resolveCategoryName(categories, transaction.categoryId)
+
+    return [
+      transaction.occurredOn,
+      transaction.description,
+      TRANSACTION_TYPE_COPY[transaction.transactionType].label,
+      categoryName,
+      PAYMENT_METHOD_COPY[transaction.paymentMethod].label,
+      BRL_FORMATTER.format(transaction.amount),
+      transaction.recurrenceGroupId ? "Sim" : "Nao",
+    ]
+      .map(escapeCsvValue)
+      .join(";")
+  })
+
+  return [
+    [
+      "Data",
+      "Descricao",
+      "Tipo",
+      "Categoria",
+      "Meio de pagamento",
+      "Valor",
+      "Recorrente",
+    ].join(";"),
+    ...rows,
+  ].join("\r\n")
+}
+
+function escapeCsvValue(value: string) {
+  return `"${value.replaceAll('"', '""')}"`
+}
+
+function downloadCsvFile(fileName: string, content: string) {
+  const blob = new Blob(["\uFEFF", content], {
+    type: "text/csv;charset=utf-8;",
+  })
+  const downloadUrl = window.URL.createObjectURL(blob)
+  const anchor = document.createElement("a")
+
+  anchor.href = downloadUrl
+  anchor.download = fileName
+  document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+  window.URL.revokeObjectURL(downloadUrl)
 }
 
 function shouldUseMobileDrawer() {
