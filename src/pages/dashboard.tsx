@@ -283,6 +283,21 @@ export function DashboardPage() {
       ),
     [loaderData.transactions, paymentMethodFilter]
   )
+  const activePaymentMethod =
+    paymentMethodFilter === "all" ? null : paymentMethodFilter
+  const creditCardInvoiceTotal = React.useMemo(
+    () =>
+      activePaymentMethod === "credit_card"
+        ? visibleTransactions.reduce((sum, transaction) => {
+            if (transaction.transactionType !== "out") {
+              return sum
+            }
+
+            return sum + transaction.amount
+          }, 0)
+        : null,
+    [activePaymentMethod, visibleTransactions]
+  )
   const monthOptions = React.useMemo(
     () => buildMonthOptions(),
     []
@@ -299,8 +314,6 @@ export function DashboardPage() {
   const isSubmitting = pendingIntent === "create" || pendingIntent === "update"
   const isDeleting = pendingIntent === "delete"
   const isExporting = exportScope !== null
-  const activePaymentMethod =
-    paymentMethodFilter === "all" ? null : paymentMethodFilter
 
   function isReserveLedgerTransaction(transaction: FinanceTransaction) {
     return (
@@ -849,6 +862,14 @@ export function DashboardPage() {
                       ? `${visibleTransactions.length} de ${loaderData.summary.transactionCount} registros`
                       : `${loaderData.summary.transactionCount} registros`}
                   </span>
+                  {creditCardInvoiceTotal !== null ? (
+                    <Badge
+                      variant="outline"
+                      className="h-auto justify-center border-amber-200/85 bg-amber-50/85 px-3 py-2 text-[10px] font-semibold tracking-[0.16em] uppercase text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200"
+                    >
+                      Total da fatura: {BRL_FORMATTER.format(creditCardInvoiceTotal)}
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
 
@@ -906,7 +927,6 @@ export function DashboardPage() {
                     return (
                       <article
                         key={transaction.id}
-                        aria-disabled={isReserveLocked || undefined}
                         aria-label={
                           isReserveLocked
                             ? `${transaction.description} protegido pelo Cofre`
@@ -917,7 +937,7 @@ export function DashboardPage() {
                         className={cn(
                           "glass-card animate-transaction-row flex items-center justify-between gap-3 rounded-[18px] border-white/55 px-3.5 py-3 text-left outline-none transition-[border-color,box-shadow,transform] dark:border-slate-700/70 dark:bg-slate-950/55",
                           isReserveLocked
-                            ? "cursor-default bg-white/68 dark:bg-slate-950/52"
+                            ? "cursor-default border-amber-200/80 bg-[linear-gradient(135deg,rgba(255,251,235,0.94),rgba(255,255,255,0.88),rgba(238,242,255,0.88))] shadow-[0_22px_38px_-30px_rgba(120,53,15,0.22)] dark:border-amber-400/20 dark:bg-[linear-gradient(135deg,rgba(120,53,15,0.18),rgba(15,23,42,0.92),rgba(49,46,129,0.16))]"
                             : "hover:-translate-y-0.5 hover:border-slate-200/90 hover:shadow-[0_22px_36px_-30px_rgba(15,23,42,0.42)] focus-visible:border-slate-400/80 focus-visible:ring-2 focus-visible:ring-slate-300/50 dark:hover:border-slate-600/85 dark:hover:shadow-[0_24px_40px_-32px_rgba(2,6,23,0.75)] dark:focus-visible:border-slate-500/80 dark:focus-visible:ring-slate-500/30",
                           !isReserveLocked &&
                             isEditing &&
@@ -946,7 +966,9 @@ export function DashboardPage() {
                           <div
                             className={cn(
                               "flex size-9 shrink-0 items-center justify-center rounded-xl",
-                              transaction.transactionType === "in"
+                              isReserveLocked
+                                ? "bg-amber-100/90 text-amber-700 dark:bg-amber-500/14 dark:text-amber-200"
+                                : transaction.transactionType === "in"
                                 ? "bg-emerald-100/80 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"
                                 : "bg-slate-200/80 text-slate-500 dark:bg-slate-800/80 dark:text-slate-300"
                             )}

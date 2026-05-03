@@ -24,8 +24,7 @@ import { Separator } from "@/components/ui/separator"
 import { APP_VERSION } from "@/lib/app-meta"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/store/auth"
-
-const NICKNAME_STORAGE_PREFIX = "project-finance:nickname:"
+import { usePreferencesStore } from "@/store/preferences"
 
 function getShellNavLinkClassName(isActive: boolean) {
   return cn(
@@ -70,12 +69,11 @@ function getInitials(value: string) {
   return `${first}${second}`.toUpperCase()
 }
 
-function readStoredNickname(storageKey: string | null) {
-  if (!storageKey || typeof window === "undefined") {
-    return ""
-  }
-
-  return window.localStorage.getItem(storageKey) ?? ""
+function shouldPreventMobileProfileAutofocus() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 767px)").matches
+  )
 }
 
 export function AppLayout() {
@@ -83,11 +81,17 @@ export function AppLayout() {
   const session = useAuthStore((state) => state.session)
   const role = useAuthStore((state) => state.role)
   const workspaceId = useAuthStore((state) => state.workspaceId)
+  const sessionUserId = session?.user.id ?? null
   const isRouteLoading = navigation.state === "loading"
   const isSigningOut =
     navigation.state === "submitting" &&
     navigation.formMethod?.toLowerCase() === "post" &&
     navigation.formAction?.endsWith("/dashboard/sign-out")
+  const savedNickname = usePreferencesStore((state) =>
+    sessionUserId ? state.nicknames[sessionUserId] ?? "" : ""
+  )
+  const setNickname = usePreferencesStore((state) => state.setNickname)
+  const clearNickname = usePreferencesStore((state) => state.clearNickname)
 
   const navItems = React.useMemo(() => {
     const items = [
@@ -114,18 +118,12 @@ export function AppLayout() {
     return items
   }, [role])
 
-  const nicknameStorageKey = session?.user.id
-    ? `${NICKNAME_STORAGE_PREFIX}${session.user.id}`
-    : null
-
   const [nicknameDraft, setNicknameDraft] = React.useState("")
   const [profileOpen, setProfileOpen] = React.useState(false)
   const [profileFeedback, setProfileFeedback] = React.useState<{
     message: string
     tone: "error" | "success"
   } | null>(null)
-
-  const savedNickname = readStoredNickname(nicknameStorageKey)
 
   const fallbackDisplayName = getFallbackDisplayName(session?.user.email)
   const profileName = savedNickname.trim() || fallbackDisplayName
@@ -141,7 +139,7 @@ export function AppLayout() {
   }
 
   function handleSaveNickname() {
-    if (!nicknameStorageKey) {
+    if (!sessionUserId) {
       setProfileFeedback({
         message: "A sessão ainda não ficou pronta para salvar o apelido local.",
         tone: "error",
@@ -152,9 +150,9 @@ export function AppLayout() {
     const normalizedNickname = nicknameDraft.trim()
 
     if (normalizedNickname) {
-      window.localStorage.setItem(nicknameStorageKey, normalizedNickname)
+      setNickname(sessionUserId, normalizedNickname)
     } else {
-      window.localStorage.removeItem(nicknameStorageKey)
+      clearNickname(sessionUserId)
     }
 
     setProfileFeedback({
@@ -298,7 +296,13 @@ export function AppLayout() {
       </nav>
 
       <Dialog open={profileOpen} onOpenChange={handleProfileOpenChange}>
-        <DialogContent>
+        <DialogContent
+          onOpenAutoFocus={(event) => {
+            if (shouldPreventMobileProfileAutofocus()) {
+              event.preventDefault()
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Perfil da sessão</DialogTitle>
             <DialogDescription>
