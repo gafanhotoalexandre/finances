@@ -31,8 +31,8 @@ export function LoginPage() {
   const notice = actionData?.info ?? loaderData.info
 
   return (
-    <Card className="glass-card rounded-[28px] border-white/55 bg-white/84 py-0 shadow-[0_24px_64px_-32px_rgba(15,23,42,0.45)] dark:border-slate-700/70 dark:bg-slate-950/60">
-      <CardHeader className="px-5 pt-5 sm:px-6 sm:pt-6">
+    <Card className="glass-card mx-auto w-full rounded-[30px] border-white/60 bg-white/88 py-0 shadow-[0_28px_72px_-36px_rgba(15,23,42,0.46)] dark:border-slate-700/70 dark:bg-slate-950/62">
+      <CardHeader className="gap-2 px-5 pt-6 sm:px-6 sm:pt-6">
         <CardAction>
           <Badge
             variant="outline"
@@ -41,22 +41,22 @@ export function LoginPage() {
             Login
           </Badge>
         </CardAction>
-        <CardTitle className="text-lg text-slate-800 sm:text-xl dark:text-slate-100">
+        <CardTitle className="text-xl text-slate-800 sm:text-[1.35rem] dark:text-slate-100">
           Entrar
         </CardTitle>
-        <CardDescription className="text-slate-600 dark:text-slate-300">
+        <CardDescription className="max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-300">
           Use seu e-mail e sua senha para voltar ao seu workspace com rapidez.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5 px-5 pb-5 sm:gap-6 sm:px-6 sm:pb-6">
+      <CardContent className="flex flex-col gap-6 px-5 pb-6 sm:gap-7 sm:px-6 sm:pb-6">
         {notice ? (
           <p className="rounded-2xl border border-sky-200/80 bg-sky-50/70 px-4 py-3 text-sm text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">
             {notice}
           </p>
         ) : null}
 
-        <Form method="post" className="flex flex-col gap-6">
-          <FieldSet>
+        <Form method="post" className="flex flex-col gap-6 sm:gap-7">
+          <FieldSet className="gap-5">
             <FieldLegend>Seus dados</FieldLegend>
             <FieldDescription>
               Se sua conta ainda não estiver ligada a um workspace, tudo bem.
@@ -70,6 +70,7 @@ export function LoginPage() {
                   name="email"
                   type="email"
                   autoComplete="email"
+                  className="h-11 rounded-2xl"
                   placeholder="voce@exemplo.com"
                   required
                 />
@@ -82,6 +83,7 @@ export function LoginPage() {
                   name="password"
                   type="password"
                   autoComplete="current-password"
+                  className="h-11 rounded-2xl"
                   placeholder="Sua senha"
                   required
                 />
@@ -94,7 +96,7 @@ export function LoginPage() {
           <Button
             type="submit"
             size="lg"
-            className="auth-cta auth-login-cta w-full"
+            className="auth-cta auth-login-cta h-12 w-full rounded-2xl text-base"
             disabled={!loaderData.configured || isSubmitting}
           >
             {isSubmitting ? "Entrando..." : "Entrar"}

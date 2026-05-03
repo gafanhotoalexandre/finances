@@ -17,7 +17,12 @@ import {
   getCurrentOccurredOn,
   type ReserveSummary,
 } from "@/lib/finance"
-import { cn } from "@/lib/utils"
+import {
+  cn,
+  formatCurrencyInput,
+  hasCurrencyInputValue,
+  parseCurrencyInput,
+} from "@/lib/utils"
 import type { ReservesLoaderData } from "@/routes/data"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -494,14 +499,16 @@ export function ReservesPage() {
                   <FieldLabel htmlFor="reserve-allocation-amount">Valor</FieldLabel>
                   <Input
                     id="reserve-allocation-amount"
-                    inputMode="decimal"
-                    min="0.01"
-                    placeholder="Ex.: 250"
-                    step="0.01"
-                    type="number"
+                    autoComplete="off"
+                    inputMode="numeric"
+                    placeholder="0,00"
+                    type="text"
                     value={allocationFormState.amount}
                     onChange={(event) =>
-                      updateAllocationFormField("amount", event.target.value)
+                      updateAllocationFormField(
+                        "amount",
+                        formatCurrencyInput(event.target.value)
+                      )
                     }
                   />
                 </Field>
@@ -815,15 +822,14 @@ function ReserveComposerForm({
         <Field>
           <FieldLabel htmlFor="reserve-target">Meta opcional</FieldLabel>
           <Input
+            autoComplete="off"
             id="reserve-target"
-            inputMode="decimal"
-            min="0.01"
-            placeholder="Ex.: 5000"
-            step="0.01"
-            type="number"
+            inputMode="numeric"
+            placeholder="0,00"
+            type="text"
             value={createFormState.targetAmount}
             onChange={(event) =>
-              onValueChange("targetAmount", event.target.value)
+              onValueChange("targetAmount", formatCurrencyInput(event.target.value))
             }
           />
           <FieldDescription>
@@ -903,7 +909,7 @@ function getReserveTargetCopy(reserve: ReserveSummary) {
 }
 
 function parsePositiveAmount(rawValue: string) {
-  const normalizedValue = Number(rawValue.replace(",", ".").trim())
+  const normalizedValue = parseCurrencyInput(rawValue)
 
   if (!Number.isFinite(normalizedValue) || normalizedValue <= 0) {
     throw new Error("INVALID_AMOUNT")
@@ -913,13 +919,11 @@ function parsePositiveAmount(rawValue: string) {
 }
 
 function parseOptionalPositiveAmount(rawValue: string) {
-  const trimmedValue = rawValue.trim()
-
-  if (trimmedValue.length === 0) {
+  if (!hasCurrencyInputValue(rawValue)) {
     return null
   }
 
-  const normalizedValue = Number(trimmedValue.replace(",", "."))
+  const normalizedValue = parseCurrencyInput(rawValue)
 
   if (!Number.isFinite(normalizedValue) || normalizedValue <= 0) {
     throw new Error("INVALID_TARGET_AMOUNT")
@@ -929,19 +933,15 @@ function parseOptionalPositiveAmount(rawValue: string) {
 }
 
 function isPositiveAmountInput(rawValue: string) {
-  if (rawValue.trim().length === 0) {
-    return false
-  }
-
-  return Number(rawValue.replace(",", ".")) > 0
+  return parseCurrencyInput(rawValue) > 0
 }
 
 function isOptionalPositiveAmountInput(rawValue: string) {
-  if (rawValue.trim().length === 0) {
+  if (!hasCurrencyInputValue(rawValue)) {
     return true
   }
 
-  return Number(rawValue.replace(",", ".")) > 0
+  return parseCurrencyInput(rawValue) > 0
 }
 
 function shouldUseMobileDrawer() {

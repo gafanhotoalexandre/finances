@@ -37,7 +37,7 @@ import {
   type TransactionType,
   type UpdateTransactionInput,
 } from "@/lib/finance"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrencyInput, parseCurrencyInput } from "@/lib/utils"
 import type { DashboardLoaderData } from "@/routes/data"
 import {
   AlertDialog,
@@ -1334,13 +1334,14 @@ function TransactionEntryForm({
               <Input
                 id="transaction-amount"
                 name="amount"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
+                autoComplete="off"
+                type="text"
+                inputMode="numeric"
+                placeholder="0,00"
                 value={formState.amount}
-                onChange={(event) => onValueChange("amount", event.target.value)}
+                onChange={(event) =>
+                  onValueChange("amount", formatCurrencyInput(event.target.value))
+                }
               />
             </Field>
           </div>
@@ -1452,7 +1453,7 @@ function createEditTransactionFormState(
   transaction: FinanceTransaction
 ): TransactionFormState {
   return {
-    amount: String(transaction.amount),
+    amount: formatCurrencyInput(transaction.amount),
     categoryId: transaction.categoryId ?? "",
     description: transaction.description,
     occurredOn: transaction.occurredOn,
@@ -1466,7 +1467,7 @@ function buildUpdateTransactionInput(
   formState: TransactionFormState
 ): UpdateTransactionInput {
   const description = formState.description.trim()
-  const amount = Number(formState.amount)
+  const amount = parseCurrencyInput(formState.amount)
 
   if (description.length < 3) {
     throw new Error("A descrição precisa ter pelo menos 3 caracteres.")

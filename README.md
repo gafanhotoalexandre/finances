@@ -8,7 +8,7 @@ Project Finance é um app de fluxo de caixa pessoal com login simples, convites 
 - shell de auth refinada: linguagem mais humana, superfície mais limpa e fluxo sem estados intermediários falsos.
 - v0.2 encerrada: rota `/admin` com emissão, revogação e histórico administrativo de convites.
 - v0.3.2 validada: edição sem atrito no Dashboard com clique para editar, recorrência com escopo explícito, smart defaults e animações suaves na listagem.
-- v0.4.2 entregue: categoria fantasma `Reserva` ocultada do formulário do dashboard, shell com loading premium e `HydrateFallback` configurado no router raiz.
+- v0.4.3 entregue: `HydrateFallback` virou splash nativa, inputs monetários agora usam máscara BRL no dashboard/cofre.
 
 ## Stack
 
@@ -59,19 +59,15 @@ Arquivos relacionados:
 4. Confirme que `Confirm email` está desativado em `Authentication`.
 5. Rode `npm run dev`.
 
-## Validação rápida da v0.4.2
+## Validação rápida da v0.4.3
 
 1. Entre em `/reservas` com um workspace autenticado.
-2. No mobile, confirme que a lista de reservas aparece antes do composer completo e que o botão `Nova caixinha` abre um Drawer para criação.
-3. Faça um aporte pelo Cofre e depois abra `/dashboard`.
-4. No formulário de criação/edição do dashboard, confirme que a categoria de sistema `Reserva` não aparece mais em nenhum seletor manual.
-5. Na navegação entre `/dashboard`, `/reservas` e `/admin`, confirme a barra de progresso no topo e o fade curto no conteúdo principal enquanto `navigation.state === loading`.
-6. Recarregue a aplicação com o console aberto e confirme que o warning de `HydrateFallback` deixou de aparecer.
-3. Crie uma reserva com apenas `nome` e confirme que o card nasce com `R$ 0,00`, sem meta e sem histórico.
-4. Crie outra reserva com `nome` e `meta`, e confirme que o card mostra `targetAmount`, barra de progresso e valor restante.
-5. Dentro do card, use `Guardar dinheiro` com `amount`, `occurredOn` e `description`, e confirme o feedback de sucesso.
-6. Reabra `/dashboard` no mesmo workspace e confirme que o aporte virou uma saída real na categoria de reserva, sem hover de edição, sem lixeira e com indicação `Cofre`/imutável.
-7. Volte para `/reservas` e confirme que `currentAmount`, `lastEntryOn` e o progresso foram atualizados após a revalidação.
+2. Recarregue a aplicação com o console aberto e confirme que o `HydrateFallback` aparece como uma splash centralizada com `SYS::FINANCE`, ícone animado e fundo coerente com light/dark mode.
+3. No mobile, abra `/login` e confirme que o formulário aparece primeiro na dobra, enquanto o bloco `SYS::FINANCE` fica reduzido e abaixo do card, sem competir com a ação principal.
+4. Em `/dashboard`, abra o drawer/painel de transação e digite o valor apenas com números. Confirme a máscara dinâmica em BRL (`1.234,50`) e que o save continua funcionando normalmente.
+5. Em `/reservas`, teste tanto a `Meta opcional` quanto o drawer `Guardar dinheiro`, confirmando a mesma máscara monetária controlada e o feedback de sucesso após criar reserva/aporte.
+6. Depois de um aporte, volte para `/dashboard` e confirme que a saída criada segue imutável, fora do seletor manual de categoria `Reserva` e consistente com o valor mascarado digitado.
+7. Em `/admin`, confirme que o histórico deixa de truncar em 5 itens e continua ordenado do convite mais recente para o mais antigo.
 
 ## Validação rápida da v0.3.0
 
