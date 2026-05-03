@@ -28,6 +28,7 @@ import {
   getCurrentAppYear,
   getCurrentMonthParam,
   getCurrentOccurredOn,
+  isReserveSystemCategory,
   updateTransaction,
   type FinanceCategory,
   type FinanceTransaction,
@@ -153,11 +154,11 @@ const TRANSACTION_TYPE_COPY: Record<
   { helper: string; label: string }
 > = {
   in: {
-    helper: "Mostra categorias de entrada e reserva para manter o fechamento coerente.",
+    helper: "Mostra apenas categorias compatíveis com lançamentos de entrada.",
     label: "Entrada",
   },
   out: {
-    helper: "Mostra categorias de saída e reserva para manter o fluxo de caixa limpo.",
+    helper: "Mostra apenas categorias compatíveis com lançamentos de saída.",
     label: "Saída",
   },
 }
@@ -247,10 +248,8 @@ export function DashboardPage() {
   )
   const reserveSystemCategoryId = React.useMemo(
     () =>
-      loaderData.categories.find(
-        (category) =>
-          category.isSystem && category.name.trim().toLowerCase() === "reserva"
-      )?.id ?? null,
+      loaderData.categories.find((category) => isReserveSystemCategory(category))
+        ?.id ?? null,
     [loaderData.categories]
   )
   const normalizedFormState = React.useMemo(
@@ -1509,7 +1508,8 @@ function filterCategories(
 ) {
   return categories.filter(
     (category) =>
-      category.scope === transactionType || category.scope === "both"
+      !isReserveSystemCategory(category) &&
+      (category.scope === transactionType || category.scope === "both")
   )
 }
 

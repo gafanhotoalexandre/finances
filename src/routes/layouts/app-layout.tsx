@@ -25,6 +25,7 @@ export function AppLayout() {
   const session = useAuthStore((state) => state.session)
   const role = useAuthStore((state) => state.role)
   const workspaceId = useAuthStore((state) => state.workspaceId)
+  const isRouteLoading = navigation.state === "loading"
   const isSigningOut =
     navigation.state === "submitting" &&
     navigation.formMethod?.toLowerCase() === "post" &&
@@ -32,6 +33,14 @@ export function AppLayout() {
 
   return (
     <div className="bg-blueprint relative min-h-svh overflow-hidden">
+      {isRouteLoading ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 z-50 h-1 overflow-hidden bg-slate-200/60 dark:bg-slate-800/60"
+        >
+          <div className="animate-shell-progress h-full w-2/5 bg-linear-to-r from-cyan-400 via-sky-500 to-indigo-500 shadow-[0_0_24px_rgba(59,130,246,0.45)]" />
+        </div>
+      ) : null}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.07),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.08),transparent_28%)]" />
       <header className="relative z-10 px-3 pt-3 sm:px-6 lg:px-8 lg:pt-6">
         <div className="glass-card mx-auto flex w-full max-w-6xl flex-col gap-3 rounded-[24px] border-white/55 px-4 py-4 dark:border-slate-700/70 dark:bg-slate-950/55 sm:gap-4 sm:px-5 sm:py-5 lg:rounded-[28px] lg:flex-row lg:items-center lg:justify-between">
@@ -100,7 +109,12 @@ export function AppLayout() {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
+      <main
+        className={cn(
+          "relative z-10 mx-auto w-full max-w-6xl px-3 py-5 transition-opacity duration-200 sm:px-6 sm:py-6 lg:px-8",
+          isRouteLoading ? "opacity-50" : "opacity-100"
+        )}
+      >
         <Outlet />
       </main>
     </div>

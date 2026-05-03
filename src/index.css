@@ -248,6 +248,10 @@
   animation-delay: var(--transaction-enter-delay, 0ms);
 }
 
+@utility animate-shell-progress {
+  animation: shellProgress 1.3s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
 @keyframes float {
   0% {
     transform: translateY(0) rotate(0deg);
@@ -297,6 +301,23 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes shellProgress {
+  0% {
+    opacity: 0.72;
+    transform: translateX(-120%) scaleX(0.42);
+  }
+
+  45% {
+    opacity: 1;
+    transform: translateX(18%) scaleX(1);
+  }
+
+  100% {
+    opacity: 0.72;
+    transform: translateX(220%) scaleX(0.48);
   }
 }
 

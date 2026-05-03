@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter } from "react-router"
 
 import App from "@/App"
@@ -25,12 +26,17 @@ import {
   signOutAction,
 } from "@/routes/data"
 
+export function HydrateFallback() {
+  return <div className="p-4 text-sm text-slate-500">Carregando aplicação...</div>
+}
+
 export const router = createBrowserRouter([
   {
     id: "root",
     path: "/",
     loader: rootLoader,
     Component: App,
+    HydrateFallback,
     errorElement: <RouteErrorPage />,
     children: [
       {

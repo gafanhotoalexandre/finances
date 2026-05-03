@@ -12,6 +12,12 @@ export type FinanceCategory = {
   scope: CategoryScope
 }
 
+export function isReserveSystemCategory(
+  category: Pick<FinanceCategory, "isSystem" | "name">
+) {
+  return category.isSystem && category.name.trim().toLowerCase() === "reserva"
+}
+
 export type FinanceTransaction = {
   amount: number
   categoryId: string | null

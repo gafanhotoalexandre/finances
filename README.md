@@ -8,7 +8,7 @@ Project Finance é um app de fluxo de caixa pessoal com login simples, convites 
 - shell de auth refinada: linguagem mais humana, superfície mais limpa e fluxo sem estados intermediários falsos.
 - v0.2 encerrada: rota `/admin` com emissão, revogação e histórico administrativo de convites.
 - v0.3.2 validada: edição sem atrito no Dashboard com clique para editar, recorrência com escopo explícito, smart defaults e animações suaves na listagem.
-- v0.4.1 entregue: dashboard com trava visual para lançamentos do Cofre e mobile de `/reservas` reorganizado para priorizar lista e criação sob demanda.
+- v0.4.2 entregue: categoria fantasma `Reserva` ocultada do formulário do dashboard, shell com loading premium e `HydrateFallback` configurado no router raiz.
 
 ## Stack
 
@@ -59,10 +59,14 @@ Arquivos relacionados:
 4. Confirme que `Confirm email` está desativado em `Authentication`.
 5. Rode `npm run dev`.
 
-## Validação rápida da v0.4.1
+## Validação rápida da v0.4.2
 
 1. Entre em `/reservas` com um workspace autenticado.
 2. No mobile, confirme que a lista de reservas aparece antes do composer completo e que o botão `Nova caixinha` abre um Drawer para criação.
+3. Faça um aporte pelo Cofre e depois abra `/dashboard`.
+4. No formulário de criação/edição do dashboard, confirme que a categoria de sistema `Reserva` não aparece mais em nenhum seletor manual.
+5. Na navegação entre `/dashboard`, `/reservas` e `/admin`, confirme a barra de progresso no topo e o fade curto no conteúdo principal enquanto `navigation.state === loading`.
+6. Recarregue a aplicação com o console aberto e confirme que o warning de `HydrateFallback` deixou de aparecer.
 3. Crie uma reserva com apenas `nome` e confirme que o card nasce com `R$ 0,00`, sem meta e sem histórico.
 4. Crie outra reserva com `nome` e `meta`, e confirme que o card mostra `targetAmount`, barra de progresso e valor restante.
 5. Dentro do card, use `Guardar dinheiro` com `amount`, `occurredOn` e `description`, e confirme o feedback de sucesso.
@@ -172,3 +176,6 @@ Importante: essa migração é destrutiva para os dados dessas tabelas. Use em a
 - revalidação local após criar reserva e após cada novo aporte
 - trava de segurança no dashboard para impedir edição/exclusão de lançamentos da categoria de sistema `Reserva`
 - mobile de `/reservas` com lista priorizada e composer deslocado para Drawer sob demanda
+- categoria de sistema `Reserva` removida da seleção manual do dashboard
+- AppLayout com barra de progresso superior e fade do conteúdo durante navegação `loading`
+- `HydrateFallback` configurado no router raiz para eliminar o warning de hidratação
