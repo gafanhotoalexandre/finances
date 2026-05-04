@@ -2,6 +2,13 @@
 
 Este guia reúne os roteiros rápidos de validação manual por release. Use-o como referência durante regressão funcional, smoke tests e validações antes de deploy.
 
+## Validação rápida da v0.5.2
+
+1. Rode `npm run build` e confirme a geração dos chunks `vendor-react`, `vendor-supabase` e `vendor-routing-state` em `dist/assets`.
+2. Abra a aplicação em build de produção e teste os principais `Selects` de `/dashboard`, `/reservas` e `/admin`, confirmando fundo opaco, legibilidade e blur consistente em light e dark mode.
+3. Valide que o menu do filtro de meio de pagamento no `/dashboard` não perde contraste nem fica translúcido demais em produção.
+4. Rode `npm run typecheck` e `npm run lint`.
+
 ## Validação rápida da v0.5.1
 
 1. Abra `/dashboard` no mobile, toque no avatar de perfil e confirme que o dialog abre sem disparar o teclado automaticamente.
