@@ -1149,7 +1149,7 @@ export function DashboardPage() {
           }
         }}
       >
-        <AlertDialogContent className="glass-card border-white/70 bg-white/95 shadow-[0_26px_60px_-36px_rgba(15,23,42,0.5)] dark:border-slate-700/75 dark:bg-slate-950/90">
+        <AlertDialogContent className={cn("glass-card border-white/70 bg-white/95 shadow-[0_26px_60px_-36px_rgba(15,23,42,0.5)] dark:border-slate-700/75 dark:bg-slate-950/90 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)]")}>
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-200">
               <CalendarDaysIcon />
@@ -1206,7 +1206,7 @@ export function DashboardPage() {
           }
         }}
       >
-        <AlertDialogContent className="glass-card border-white/70 bg-white/95 shadow-[0_26px_60px_-36px_rgba(15,23,42,0.5)] dark:border-slate-700/75 dark:bg-slate-950/90">
+        <AlertDialogContent className={cn("glass-card border-white/70 bg-white/95 shadow-[0_26px_60px_-36px_rgba(15,23,42,0.5)] dark:border-slate-700/75 dark:bg-slate-950/90 backdrop-blur-md [-webkit-backdrop-filter:blur(12px)]")}>
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-200">
               <Trash2Icon />

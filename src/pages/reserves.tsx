@@ -621,13 +621,41 @@ export function ReservesPage() {
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_360px] lg:gap-8">
             <section className="order-1 flex min-w-0 flex-col gap-4">
+              {/* prioridade no topo */}
+              <div className="lg:hidden">
+                <Accordion
+                  type="multiple"
+                  defaultValue={mobileSupportDefaultSections}
+                  className="flex flex-col gap-3"
+                >
+                  <AccordionItem className="glass-card overflow-hidden rounded-[22px] border border-white/55 bg-white/72 px-0 dark:border-slate-700/70 dark:bg-slate-950/55" value="composer">
+                    <AccordionTrigger className="px-4 py-4 hover:no-underline">
+                      <MobileAccordionTrigger
+                        description="Abra novas reservas sem disputar espaço com a leitura do cofre."
+                        title="Nova caixinha"
+                      />
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4">
+                      <ReserveComposerForm
+                        canCreateReserve={canCreateReserve}
+                        createError={createError}
+                        createFormState={createFormState}
+                        isCreating={isCreating}
+                        onSubmit={handleCreateReserve}
+                        onValueChange={updateCreateFormField}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+
               {loaderData.reserves.length === 0 ? (
                 <Card className="glass-card rounded-[24px] border-white/55 bg-white/72 py-0 dark:border-slate-700/70 dark:bg-slate-950/55">
                   <CardHeader className="px-5 pt-5">
                     <CardTitle>Sem reservas ainda.</CardTitle>
                     <CardDescription>
                       A primeira caixinha nasce no painel lateral no desktop e no
-                      acordeão abaixo no mobile. Depois disso, ações e histórico
+                      acordeão acima no mobile. Depois disso, ações e histórico
                       passam a viver no Drawer de detalhes.
                     </CardDescription>
                   </CardHeader>
@@ -657,7 +685,7 @@ export function ReservesPage() {
                       </p>
                     </div>
 
-                    <TabsList className="grid w-full grid-cols-2 sm:w-auto">
+                    <TabsList className="grid w-full grid-cols-2 sm:w-100">
                       <TabsTrigger value="active">
                         Ativas ({activeReserves.length})
                       </TabsTrigger>
@@ -687,31 +715,12 @@ export function ReservesPage() {
                 </Tabs>
               )}
 
+              {/* ARQUIVADAS MOBILE: Mantidas na base do fluxo */}
               <div className="lg:hidden">
                 <Accordion
                   type="multiple"
-                  defaultValue={mobileSupportDefaultSections}
                   className="flex flex-col gap-3"
                 >
-                  <AccordionItem className="glass-card overflow-hidden rounded-[22px] border border-white/55 bg-white/72 px-0 dark:border-slate-700/70 dark:bg-slate-950/55" value="composer">
-                    <AccordionTrigger className="px-4 py-4 hover:no-underline">
-                      <MobileAccordionTrigger
-                        description="Abra novas reservas sem disputar espaço com a leitura do cofre."
-                        title="Nova caixinha"
-                      />
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4">
-                      <ReserveComposerForm
-                        canCreateReserve={canCreateReserve}
-                        createError={createError}
-                        createFormState={createFormState}
-                        isCreating={isCreating}
-                        onSubmit={handleCreateReserve}
-                        onValueChange={updateCreateFormField}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
-
                   {loaderData.reserves.length > 0 ? (
                     <AccordionItem className="glass-card overflow-hidden rounded-[22px] border border-white/55 bg-white/72 px-0 dark:border-slate-700/70 dark:bg-slate-950/55" value="archived">
                       <AccordionTrigger className="px-4 py-4 hover:no-underline">
@@ -1639,11 +1648,11 @@ type ReserveComposerFormProps = {
 
 function ReserveFact({ label, value }: ReserveFactProps) {
   return (
-    <div className="rounded-[18px] border border-white/60 bg-white/68 px-3.5 py-3 dark:border-slate-700/70 dark:bg-slate-950/58 sm:rounded-2xl">
+    <div className="rounded-[18px] border border-white/60 bg-white/68 p-2.5 dark:border-slate-700/70 dark:bg-slate-950/58 sm:rounded-2xl">
       <div className="text-[10px] font-medium tracking-[0.2em] uppercase text-slate-500 dark:text-slate-400">
         {label}
       </div>
-      <div className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+      <div className="mt-1.5 text-sm md:text-xs font-semibold text-slate-800 dark:text-slate-100">
         {value}
       </div>
     </div>
