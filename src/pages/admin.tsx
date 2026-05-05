@@ -3,7 +3,6 @@ import {
   ArrowLeftIcon,
   Building2Icon,
   CheckCircle2Icon,
-  ChevronDownIcon,
   CopyIcon,
   HistoryIcon,
   Link2Icon,
@@ -33,6 +32,12 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -342,7 +347,8 @@ export function AdminPage() {
                 </Card>
               ) : (
                 <>
-                  <div className="flex flex-col gap-3 lg:hidden">
+                  <div className="lg:hidden">
+                    <Accordion type="single" collapsible className="flex flex-col gap-3">
                     {loaderData.invites.map((invite) => {
                       const showCopyAction = invite.visualStatus === "pending"
                       const showRevokeAction = invite.status === "pending"
@@ -350,11 +356,12 @@ export function AdminPage() {
                         isRevoking && pendingInviteId === invite.id
 
                       return (
-                        <details
+                        <AccordionItem
                           key={invite.id}
-                          className="group glass-card overflow-hidden rounded-[22px] border-white/55 bg-white/76 dark:border-slate-700/70 dark:bg-slate-950/55"
+                          value={invite.id}
+                          className="glass-card overflow-hidden rounded-[22px] border border-white/55 bg-white/76 px-0 not-last:border-b-0 dark:border-slate-700/70 dark:bg-slate-950/55"
                         >
-                          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 [&::-webkit-details-marker]:hidden">
+                          <AccordionTrigger className="px-4 py-4 hover:no-underline">
                             <div className="flex min-w-0 items-center gap-3">
                               <Badge
                                 variant="outline"
@@ -369,10 +376,10 @@ export function AdminPage() {
                                 {getInviteCompactTitle(invite)}
                               </span>
                             </div>
-                            <ChevronDownIcon className="size-4 shrink-0 text-slate-400 transition-transform duration-200 group-open:rotate-180 dark:text-slate-500" />
-                          </summary>
+                          </AccordionTrigger>
 
-                          <div className="flex flex-col gap-4 border-t border-white/60 px-4 pb-4 pt-3 dark:border-slate-700/70">
+                          <AccordionContent className="border-t border-white/60 px-4 pt-3 dark:border-slate-700/70">
+                            <div className="flex flex-col gap-4">
                             <div className="flex flex-wrap items-center gap-2">
                               <Badge
                                 variant="secondary"
@@ -416,10 +423,12 @@ export function AdminPage() {
                               showCopyAction={showCopyAction}
                               showRevokeAction={showRevokeAction}
                             />
-                          </div>
-                        </details>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
                       )
                     })}
+                    </Accordion>
                   </div>
 
                   <div className="hidden flex-col gap-3 lg:flex">

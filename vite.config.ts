@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react"
 import packageJson from "./package.json"
 import { defineConfig } from "vite"
 
+// https://vitejs.dev/guide/build.html#chunking-strategy
 function manualChunks(id: string) {
   if (!id.includes("node_modules")) {
     return undefined

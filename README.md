@@ -4,11 +4,10 @@ Project Finance é um app de fluxo de caixa pessoal com login simples, convites 
 
 ## Estado atual
 
-- v0.5.1 entregue: preferências locais saíram do `app-layout` e passaram a usar store persistido com Zustand.
-- Dashboard agora destaca `Total da fatura` ao filtrar `Cartão de Crédito`, eliminando soma manual em mobile e desktop.
-- Dialog de perfil deixa de forçar teclado no mobile e os `Selects` voltam a respeitar a identidade visual `glass-card`.
-- Lançamentos de aporte do Cofre no dashboard agora parecem protegidos/especiais, não elementos desativados.
-- Os roteiros de validação manual foram extraídos para `QA_GUIDE.md`, mantendo o README mais enxuto.
+- v0.5.3 entregue: o Cofre agora suporta aporte com `Saldo inicial`, resgates, histórico sob demanda e arquivamento de reservas zeradas.
+- O fluxo principal de `/reservas` foi reorientado para Drawer de detalhes com tabs `Ações` e `Histórico`, mantendo desktop eficiente e mobile com Accordion.
+- `/admin` no mobile saiu de `<details>` nativo para Accordion compartilhado do stack shadcn.
+- Os hotfixes de build e contraste dos `Selects` de v0.5.2 continuam vigentes.
 
 ## Stack
 
@@ -62,7 +61,7 @@ Arquivos relacionados:
 
 ## QA
 
-Os roteiros rápidos de validação manual agora ficam em `QA_GUIDE.md`, incluindo as versões históricas e a nova checklist da `v0.5.1`.
+Os roteiros rápidos de validação manual agora ficam em `QA_GUIDE.md`, incluindo as versões históricas e a checklist da `v0.5.3`.
 
 ## O que a migração foundation cria
 
@@ -130,3 +129,17 @@ Importante: essa migração é destrutiva para os dados dessas tabelas. Use em a
 - paleta `glass-card` aplicada ao conteúdo e aos itens do `Select`
 - aportes do Cofre com visual protegido/especial no dashboard
 - validação manual centralizada em `QA_GUIDE.md`
+
+### v0.5.2
+
+- hotfix de chunk splitting em produção com `vendor-react`, `vendor-supabase` e `vendor-routing-state`
+- correção de contraste e blur do conteúdo de `Select` em build de produção
+
+### v0.5.3
+
+- `status` de reserva com agrupamentos `Ativas`, `Concluídas` e `Arquivadas`
+- Drawer de detalhes do Cofre com tabs `Ações` e `Histórico`
+- aporte com opção `Este valor ja estava guardado`, exibido como `Saldo inicial`
+- resgates do Cofre reconciliados como entrada de `Reserva` no dashboard
+- histórico sob demanda via leitura direta de `reserve_entries`
+- Accordion mobile em `/reservas` e no histórico mobile de `/admin`

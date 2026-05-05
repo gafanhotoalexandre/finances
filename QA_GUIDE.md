@@ -2,6 +2,19 @@
 
 Este guia reúne os roteiros rápidos de validação manual por release. Use-o como referência durante regressão funcional, smoke tests e validações antes de deploy.
 
+## Validação rápida da v0.5.3
+
+1. Aplique a migration `supabase/migrations/20260505005952_v053_reserves_advanced.sql` antes de abrir `/reservas`.
+2. Em `/reservas`, crie uma nova caixinha e confirme que ela aparece em `Ativas` no desktop e dentro do Accordion `Ativas` no mobile.
+3. Abra o Drawer de detalhes de uma reserva ativa, registre um aporte normal e confirme: feedback de sucesso, novo item no `Histórico` e nova saída no `/dashboard` com categoria `Reserva`.
+4. No mesmo Drawer, marque `Este valor ja estava guardado`, confirme o aporte e valide que o histórico mostra o badge `Saldo inicial` sem gerar nova saída no `/dashboard`.
+5. Registre um resgate com `Dinheiro`, `Pix` e `Débito` em cenários separados e confirme uma entrada correspondente no `/dashboard`.
+6. Tente resgatar acima do saldo disponível e confirme bloqueio amigável no frontend e rejeição do backend.
+7. Tente arquivar uma reserva com saldo maior que zero e confirme que o CTA continua visível, porém bloqueado com a explicação de saldo pendente.
+8. Zere o saldo, arquive a reserva e confirme que ela sai de `Ativas`/`Concluídas`, aparece apenas em `Arquivadas` e abre o mesmo Drawer com `Histórico` disponível e `Ações` bloqueadas.
+9. Em `/admin` no mobile, confirme que o histórico de convites usa Accordion mantendo status, detalhes e ações de copiar/revogar.
+10. Rode `npm run typecheck`, `npm run lint` e `npm run build`.
+
 ## Validação rápida da v0.5.2
 
 1. Rode `npm run build` e confirme a geração dos chunks `vendor-react`, `vendor-supabase` e `vendor-routing-state` em `dist/assets`.

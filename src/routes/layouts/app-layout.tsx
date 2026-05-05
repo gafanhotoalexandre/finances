@@ -281,7 +281,7 @@ export function AppLayout() {
       </main>
 
       <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom,0)+0.75rem)] lg:hidden">
-        <div className="glass-card pointer-events-auto mx-auto flex w-full max-w-6xl items-center gap-1 rounded-[26px] border-white/60 bg-white/84 p-2 shadow-[0_34px_80px_-48px_rgba(15,23,42,0.72)] dark:border-slate-700/70 dark:bg-slate-950/84">
+        <div className="glass-card pointer-events-auto mx-auto flex w-full max-w-6xl items-center gap-1 rounded-[26px] border border-white/60 bg-white/84 p-2 shadow-[0_34px_80px_-48px_rgba(15,23,42,0.72)] backdrop-blur-xl [-webkit-backdrop-filter:blur(20px)] dark:border-slate-700/70 dark:bg-slate-950/84">
           {navItems.map((item) => (
             <NavLink
               key={item.to}

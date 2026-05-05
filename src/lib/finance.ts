@@ -4,6 +4,11 @@ export type TransactionType = "in" | "out"
 export type CategoryScope = TransactionType | "both"
 export type PaymentMethod = "credit_card" | "debit" | "pix" | "cash"
 export type TransactionMutationScope = "single" | "this-and-future"
+export type FinanceReserveStatus = "active" | "archived"
+export type ReserveWithdrawalPaymentMethod = Extract<
+  PaymentMethod,
+  "cash" | "debit" | "pix"
+>
 
 export type FinanceCategory = {
   id: string
@@ -49,6 +54,7 @@ export type FinanceReserve = {
   createdAt: string
   id: string
   name: string
+  status: FinanceReserveStatus
   targetAmount: number | null
   updatedAt: string
 }
@@ -116,6 +122,7 @@ export type UpdateTransactionArgs = DeleteTransactionInput & {
 export type AllocateToReserveInput = {
   amount: number
   categoryId?: string | null
+  deductFromCashflow?: boolean
   description: string
   notes?: string | null
   occurredOn: string
@@ -125,7 +132,25 @@ export type AllocateToReserveInput = {
 
 export type AllocateToReserveResult = {
   reserveEntryId: string
+  transactionId: string | null
+}
+
+export type WithdrawFromReserveInput = {
+  amount: number
+  description: string
+  occurredOn: string
+  paymentMethod?: ReserveWithdrawalPaymentMethod
+  reserveId: string
+}
+
+export type WithdrawFromReserveResult = {
+  reserveEntryId: string
   transactionId: string
+}
+
+export type ArchiveReserveInput = {
+  currentAmount: number
+  reserveId: string
 }
 
 type CategoryRow = {
@@ -162,13 +187,32 @@ type ReserveSummaryRow = {
   name: string
   remaining_amount: number | string | null
   reserve_id: string
+  status: FinanceReserveStatus
   target_amount: number | string | null
   updated_at: string
 }
 
 type AllocateToReserveRow = {
   reserve_entry_id: string
+  transaction_id: string | null
+}
+
+type WithdrawFromReserveRow = {
+  reserve_entry_id: string
   transaction_id: string
+}
+
+type ReserveEntryRow = {
+  amount: number | string
+  created_at: string
+  description: string
+  entry_type: ReserveEntryType
+  id: string
+  notes: string | null
+  occurred_on: string
+  reserve_id: string
+  source_transaction_id: string | null
+  updated_at: string
 }
 
 const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/
@@ -420,6 +464,7 @@ export async function getReservesSummary() {
 export async function allocateToReserve({
   amount,
   categoryId = null,
+  deductFromCashflow = true,
   description,
   notes,
   occurredOn,
@@ -449,6 +494,7 @@ export async function allocateToReserve({
   const { data, error } = await supabase.rpc("allocate_to_reserve", {
     p_amount: normalizedAmount,
     p_category_id: categoryId,
+    p_deduct_from_cashflow: deductFromCashflow,
     p_description: normalizedDescription,
     p_notes: normalizedNotes,
     p_occurred_on: occurredOn,
@@ -470,6 +516,112 @@ export async function allocateToReserve({
     reserveEntryId: row.reserve_entry_id,
     transactionId: row.transaction_id,
   } satisfies AllocateToReserveResult
+}
+
+export async function withdrawFromReserve({
+  amount,
+  description,
+  occurredOn,
+  paymentMethod = "cash",
+  reserveId,
+}: WithdrawFromReserveInput) {
+  const normalizedAmount = Number(amount)
+  const normalizedDescription = description.trim()
+
+  if (!reserveId) {
+    throw new Error("RESERVE_ID_REQUIRED")
+  }
+
+  if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+    throw new Error("INVALID_AMOUNT")
+  }
+
+  if (normalizedDescription.length < 3) {
+    throw new Error("INVALID_DESCRIPTION")
+  }
+
+  if (!occurredOn) {
+    throw new Error("INVALID_OCCURRED_ON")
+  }
+
+  const { data, error } = await supabase.rpc("withdraw_from_reserve", {
+    p_amount: normalizedAmount,
+    p_description: normalizedDescription,
+    p_occurred_on: occurredOn,
+    p_payment_method: paymentMethod,
+    p_reserve_id: reserveId,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  const row = ((data ?? []) as WithdrawFromReserveRow[])[0]
+
+  if (!row) {
+    throw new Error("RESERVE_WITHDRAWAL_FAILED")
+  }
+
+  return {
+    reserveEntryId: row.reserve_entry_id,
+    transactionId: row.transaction_id,
+  } satisfies WithdrawFromReserveResult
+}
+
+export async function getReserveEntries(reserveId: string) {
+  if (!reserveId) {
+    throw new Error("RESERVE_ID_REQUIRED")
+  }
+
+  const { data, error } = await supabase
+    .from("reserve_entries")
+    .select(
+      "id, reserve_id, source_transaction_id, entry_type, amount, occurred_on, description, notes, created_at, updated_at"
+    )
+    .eq("reserve_id", reserveId)
+    .order("occurred_on", { ascending: false })
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    throw error
+  }
+
+  return ((data ?? []) as ReserveEntryRow[]).map(mapReserveEntryRow)
+}
+
+export async function archiveReserve({
+  currentAmount,
+  reserveId,
+}: ArchiveReserveInput) {
+  if (!reserveId) {
+    throw new Error("RESERVE_ID_REQUIRED")
+  }
+
+  if (Math.abs(currentAmount) > 0.000001) {
+    throw new Error("RESERVE_BALANCE_NOT_ZERO")
+  }
+
+  const { data, error } = await supabase
+    .from("reserves")
+    .update({ status: "archived" })
+    .eq("id", reserveId)
+    .eq("status", "active")
+    .select("id")
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!data) {
+    throw new Error("RESERVE_NOT_FOUND")
+  }
+}
+
+export function isReserveInitialBalanceEntry(
+  entry: Pick<FinanceReserveEntry, "entryType" | "sourceTransactionId">
+) {
+  return entry.entryType === "in" && entry.sourceTransactionId === null
 }
 
 export async function updateTransaction({
@@ -636,7 +788,23 @@ function mapReserveSummaryRow(row: ReserveSummaryRow): ReserveSummary {
     name: row.name,
     remainingAmount:
       row.remaining_amount === null ? null : Number(row.remaining_amount),
+    status: row.status,
     targetAmount: row.target_amount === null ? null : Number(row.target_amount),
+    updatedAt: row.updated_at,
+  }
+}
+
+function mapReserveEntryRow(row: ReserveEntryRow): FinanceReserveEntry {
+  return {
+    amount: Number(row.amount),
+    createdAt: row.created_at,
+    description: row.description,
+    entryType: row.entry_type,
+    id: row.id,
+    notes: row.notes,
+    occurredOn: row.occurred_on,
+    reserveId: row.reserve_id,
+    sourceTransactionId: row.source_transaction_id,
     updatedAt: row.updated_at,
   }
 }
